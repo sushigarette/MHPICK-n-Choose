@@ -15,7 +15,7 @@ const Index: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen grow flex flex-col bg-gray-50">
       <Header />
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         <motion.div

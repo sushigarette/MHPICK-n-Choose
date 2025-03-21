@@ -40,7 +40,7 @@ const Header: React.FC = () => {
     return () => {
       window.removeEventListener("storage", checkAuth);
     };
-  }, [location]);
+  }, [location, setIsAuthenticated, setUserEmail]);
 
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
@@ -50,7 +50,6 @@ const Header: React.FC = () => {
       title: "Déconnexion réussie",
       description: "Vous avez été déconnecté avec succès.",
     });
-
     navigate("/");
   };
 
