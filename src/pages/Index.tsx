@@ -3,16 +3,16 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "../context/AuthContext";
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   // Vérifier si l'utilisateur est déjà connecté
   useEffect(() => {
-    if (localStorage.getItem("isAuthenticated") === "true") {
-      navigate("/dashboard");
-    }
-  }, [navigate]);
+    if (isAuthenticated) navigate("/dashboard");
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen grow flex flex-col bg-gray-50">
