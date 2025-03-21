@@ -316,7 +316,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="max-h-full grow flex align-center justify-center bg-white p-6 rounded-lg shadow-md">
-          <div className="max-h-full md:grow-0 grow">
+          <div className="max-h-full md:grow-0 grow shadow-md">
             <FloorPlan
               desks={desks}
               meetingRooms={meetingRooms}
