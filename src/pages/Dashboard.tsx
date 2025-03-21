@@ -283,7 +283,7 @@ const Dashboard: React.FC = () => {
           {myReservations.length > 0 && (
             <>
               <h2 className="font-semibold">Mes réservations</h2>
-              <div>
+              <div className="flex flex-col gap-2">
                 {myReservations.map((reservation, index) => {
                   const resourceName =
                     reservation.type === "desk"

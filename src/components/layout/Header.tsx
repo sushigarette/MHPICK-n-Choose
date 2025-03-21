@@ -12,55 +12,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "../../context/AuthContext";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
   const [userEmail, setUserEmail] = useState("");
 
-  // Vérifier l'état d'authentification au chargement et sur les changements
-  useEffect(() => {
-    const checkAuth = () => {
-      const auth = localStorage.getItem("isAuthenticated") === "true";
-      setIsAuthenticated(auth);
-
-      if (auth) {
-        const email = localStorage.getItem("userEmail") || "";
-        setUserEmail(email);
-      }
-    };
-
-    checkAuth();
-
-    // Écouter les changements d'authentification
-    window.addEventListener("storage", checkAuth);
-
-    return () => {
-      window.removeEventListener("storage", checkAuth);
-    };
-  }, [location, setIsAuthenticated, setUserEmail]);
-
   const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userEmail");
-
+    logout();
     toast({
       title: "Déconnexion réussie",
       description: "Vous avez été déconnecté avec succès.",
     });
     navigate("/");
-  };
-
-  const handleLogin = () => {
-    // Si l'utilisateur est déjà authentifié, rediriger vers le dashboard
-    // Sinon, rediriger vers la page de connexion
-    if (isAuthenticated) {
-      navigate("/dashboard");
-    } else {
-      navigate("/login");
-    }
   };
 
   return (
@@ -112,7 +78,7 @@ const Header: React.FC = () => {
             transition={{ duration: 0.5 }}
             className="flex items-center space-x-4"
           >
-            <Button variant="ghost" onClick={handleLogin}>
+            <Button variant="ghost" onClick={() => navigate("/login")}>
               Connexion
             </Button>
             <Button onClick={() => navigate("/register")}>S'inscrire</Button>
