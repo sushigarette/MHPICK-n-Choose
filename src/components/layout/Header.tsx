@@ -77,7 +77,7 @@ const Header: React.FC = () => {
         >
           <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-teal-400 rounded-md"></div>
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text">
-            FlexReserve
+          MHPick'n choose
           </span>
         </motion.div>
         

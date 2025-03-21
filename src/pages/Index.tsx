@@ -26,17 +26,17 @@ const Index: React.FC = () => {
           className="max-w-3xl text-center"
         >
           <h1 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text">
-            Simplifiez la gestion de vos espaces de travail
+            C'est parti pour une réservation !
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            FlexReserve vous permet de réserver facilement des bureaux et des salles de réunion en quelques clics
+            Bureaux, salles de réunion, places de parking 
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" onClick={() => navigate('/register')} className="text-lg py-6">
-              Commencer gratuitement
+             Besoin d'un compte ? 
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate('/login')} className="text-lg py-6">
-              Se connecter
+              Connecte toi
             </Button>
           </div>
         </motion.div>
