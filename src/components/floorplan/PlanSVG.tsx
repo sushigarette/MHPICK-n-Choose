@@ -1,10 +1,10 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 
 interface PlanSVGProps {
   desks: { id: string; isBooked: boolean }[];
   meetingRooms: { id: string; isBooked: boolean }[];
-  onSelect: (id: string, type: 'desk' | 'room') => void;
+  onSelect: (id: string, type: "desk" | "room") => void;
 }
 
 const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
@@ -13,7 +13,7 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
       <svg
         version="1.1"
         id="svg1"
-        className="w-full h-full max-w-[1200px] max-h-[1200px]"
+        className="w-full h-full"
         viewBox="0 0 1112 1196"
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
@@ -22,14 +22,8 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
         <defs id="defs1" />
         <g id="g1">
           {/* Image de base du plan */}
-          <image
-            width="1112"
-            height="1196"
-            preserveAspectRatio="xMidYMid meet"
-            xlinkHref="/plan.svg"
-            id="image1"
-          />
-          
+          <image width="1112" height="1196" preserveAspectRatio="xMidYMid meet" xlinkHref="/plan.svg" id="image1" />
+
           {/* Salles de réunion */}
           <motion.ellipse
             id="salle_reunion_1"
@@ -37,10 +31,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="420.26019"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${meetingRooms.find(r => r.id === 'salle_reunion_1')?.isBooked ? 'fill-amber-300' : 'fill-yellow-300'}`}
+            className={`cursor-pointer ${
+              meetingRooms.find((r) => r.id === "salle_reunion_1")?.isBooked ? "fill-amber-300" : "fill-yellow-300"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('salle_reunion_1', 'room')}
+            onClick={() => onSelect("salle_reunion_1", "room")}
           />
           <motion.ellipse
             id="salle_reunion_2"
@@ -48,10 +44,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="109.79991"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${meetingRooms.find(r => r.id === 'salle_reunion_2')?.isBooked ? 'fill-amber-300' : 'fill-yellow-300'}`}
+            className={`cursor-pointer ${
+              meetingRooms.find((r) => r.id === "salle_reunion_2")?.isBooked ? "fill-amber-300" : "fill-yellow-300"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('salle_reunion_2', 'room')}
+            onClick={() => onSelect("salle_reunion_2", "room")}
           />
           <motion.ellipse
             id="salle_reunion_3"
@@ -59,10 +57,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="469.34985"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${meetingRooms.find(r => r.id === 'salle_reunion_3')?.isBooked ? 'fill-amber-300' : 'fill-yellow-300'}`}
+            className={`cursor-pointer ${
+              meetingRooms.find((r) => r.id === "salle_reunion_3")?.isBooked ? "fill-amber-300" : "fill-yellow-300"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('salle_reunion_3', 'room')}
+            onClick={() => onSelect("salle_reunion_3", "room")}
           />
 
           {/* Phone Box */}
@@ -74,7 +74,7 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             className="cursor-pointer fill-blue-500"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('PhoneBox', 'room')}
+            onClick={() => onSelect("PhoneBox", "room")}
           />
 
           {/* Bureaux flexibles */}
@@ -84,10 +84,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="51.184258"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_1')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_1")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_1', 'desk')}
+            onClick={() => onSelect("bureau_flex_1", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_2"
@@ -95,10 +97,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="49.0289"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_2')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_2")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_2', 'desk')}
+            onClick={() => onSelect("bureau_flex_2", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_3"
@@ -106,10 +110,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="119.0289"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_3')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_3")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_3', 'desk')}
+            onClick={() => onSelect("bureau_flex_3", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_4"
@@ -117,10 +123,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="117.0289"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_4')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_4")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_4', 'desk')}
+            onClick={() => onSelect("bureau_flex_4", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_5"
@@ -128,10 +136,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="242.36128"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_5')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_5")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_5', 'desk')}
+            onClick={() => onSelect("bureau_flex_5", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_6"
@@ -139,10 +149,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="242.50903"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_6')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_6")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_6', 'desk')}
+            onClick={() => onSelect("bureau_flex_6", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_7"
@@ -150,10 +162,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="337.6933"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_7')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_7")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_7', 'desk')}
+            onClick={() => onSelect("bureau_flex_7", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_8"
@@ -161,10 +175,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="537.70813"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_8')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_8")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_8', 'desk')}
+            onClick={() => onSelect("bureau_flex_8", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_9"
@@ -172,10 +188,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="537.5379"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_9')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_9")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_9', 'desk')}
+            onClick={() => onSelect("bureau_flex_9", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_10"
@@ -183,10 +201,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="631.1781"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_10')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_10")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_10', 'desk')}
+            onClick={() => onSelect("bureau_flex_10", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_11"
@@ -194,10 +214,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="631.92444"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_11')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_11")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_11', 'desk')}
+            onClick={() => onSelect("bureau_flex_11", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_12"
@@ -205,10 +227,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="696.48419"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_12')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_12")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_12', 'desk')}
+            onClick={() => onSelect("bureau_flex_12", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_13"
@@ -216,10 +240,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="696.97668"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_13')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_13")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_13', 'desk')}
+            onClick={() => onSelect("bureau_flex_13", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_14"
@@ -227,10 +253,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="790.43182"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_14')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_14")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_14', 'desk')}
+            onClick={() => onSelect("bureau_flex_14", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_15"
@@ -238,10 +266,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="791.67816"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_15')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_15")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_15', 'desk')}
+            onClick={() => onSelect("bureau_flex_15", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_16"
@@ -249,10 +279,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="893.63336"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_16')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_16")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_16', 'desk')}
+            onClick={() => onSelect("bureau_flex_16", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_17"
@@ -260,10 +292,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="893.20056"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_17')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_17")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_17', 'desk')}
+            onClick={() => onSelect("bureau_flex_17", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_18"
@@ -271,10 +305,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="987.32733"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_18')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_18")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_18', 'desk')}
+            onClick={() => onSelect("bureau_flex_18", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_19"
@@ -282,10 +318,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="987.73041"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_19')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_19")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_19', 'desk')}
+            onClick={() => onSelect("bureau_flex_19", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_20"
@@ -293,10 +331,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="629.99915"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_20')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_20")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_20', 'desk')}
+            onClick={() => onSelect("bureau_flex_20", "desk")}
           />
           <motion.ellipse
             id="bureau_flex_21"
@@ -304,10 +344,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
             cy="632.57367"
             rx="8.2798061"
             ry="8.028903"
-            className={`cursor-pointer ${desks.find(d => d.id === 'bureau_flex_21')?.isBooked ? 'fill-red-500' : 'fill-green-500'}`}
+            className={`cursor-pointer ${
+              desks.find((d) => d.id === "bureau_flex_21")?.isBooked ? "fill-red-500" : "fill-green-500"
+            }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect('bureau_flex_21', 'desk')}
+            onClick={() => onSelect("bureau_flex_21", "desk")}
           />
         </g>
       </svg>
@@ -315,4 +357,4 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ desks, meetingRooms, onSelect }) => {
   );
 };
 
-export default PlanSVG; 
+export default PlanSVG;
