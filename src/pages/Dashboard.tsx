@@ -13,6 +13,8 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import supabase from "@/supabase";
+import { useAuth } from "@/context/AuthContext";
+import { PostgrestError } from "@supabase/supabase-js";
 
 // Données des bureaux basées sur les coordonnées fournies
 const initialDesksData = [
@@ -46,13 +48,16 @@ const initialMeetingRoomsData = [
   { id: "PhoneBox", isBooked: false },
 ];
 
-interface Reservation {
-  id: string;
-  type: "desk" | "room";
-  date: Date;
-  startTime: string;
-  endTime: string;
-}
+type Reservation = {
+  id: number;
+  user_id: string; // UUID as a string
+  resource_id: string; // Resource identifier (e.g., "bureau_flex_3")
+  type: "desk" | "meeting_room"; // Assuming type can be either 'desk' or 'meeting_room'
+  date: string; // ISO date string
+  start_time: string; // Time string (HH:mm:ss)
+  end_time: string; // Time string (HH:mm:ss)
+  created_at: string; // ISO datetime string
+};
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
@@ -61,80 +66,61 @@ const Dashboard: React.FC = () => {
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedResource, setSelectedResource] = useState<{ id: string; type: "desk" | "room" } | null>(null);
+  const { currentUser } = useAuth();
 
-  const [todos, setTodos] = useState([]);
-
+  // Charger les réservations depuis Supabase
   useEffect(() => {
-    const getTodos = async () => {
-      const { data: todos } = await supabase.from("todos").select();
+    loadReservations();
+  }, [selectedDate]);
 
-      if (todos.length > 1) {
-        setTodos(todos);
-      }
-    };
+  const loadReservations = async () => {
+    // Get the start and end of the day
+    const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0)); // Start of the day (00:00)
+    const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999)); // End of the day (23:59)
 
-    getTodos();
-  }, []);
+    // Fetch reservations for the given day
+    const {
+      data: reservations,
+      error,
+    }: {
+      data: Reservation[] | null; // The data will be an array of Reservation objects or null
+      error: PostgrestError | null; // The error can be a PostgrestError or null
+    } = await supabase
+      .from("reservations")
+      .select("*")
+      .gte("date", startOfDay.toISOString())
+      .lte("date", endOfDay.toISOString());
 
-  // Simuler un utilisateur connecté
-  const currentUser = {
-    id: "user-1",
-    email: "utilisateur@example.com",
-    name: "Utilisateur",
+    if (error) return console.error("Error loading reservations:", error);
+
+    console.log(reservations);
+
+    // Update MyReservations state
+    const myRes = reservations.filter((r) => r.user_id == currentUser.id);
+    setMyReservations(myRes);
+
+    // Assuming desks and meetingRooms are arrays with an 'id' field to match with reservations
+    const updatedDesks = desks.map((desk) => ({
+      ...desk,
+      isBooked: reservations.some((res) => res.resource_id === desk.id),
+    }));
+
+    const updatedMeetingRooms = meetingRooms.map((room) => ({
+      ...room,
+      isBooked: reservations.some((res) => res.resource_id === room.id),
+    }));
+
+    // Update state for desks and meeting rooms
+    setDesks(updatedDesks);
+    setMeetingRooms(updatedMeetingRooms);
   };
 
-  // Charger les réservations depuis le localStorage
-  useEffect(() => {
-    const savedDesks = localStorage.getItem("desks");
-    const savedRooms = localStorage.getItem("meetingRooms");
-    const savedReservations = localStorage.getItem("myReservations");
-
-    console.log("Loading from localStorage:", {
-      savedDesks,
-      savedRooms,
-      savedReservations,
-    });
-
-    if (savedDesks) {
-      const parsedDesks = JSON.parse(savedDesks);
-      if (parsedDesks.length === 21) {
-        setDesks(parsedDesks);
-      } else {
-        setDesks(initialDesksData);
-      }
-    }
-    if (savedRooms) setMeetingRooms(JSON.parse(savedRooms));
-    if (savedReservations) {
-      const parsedReservations = JSON.parse(savedReservations);
-      // Convertir les dates string en objets Date
-      const reservationsWithDates = parsedReservations.map((res: any) => ({
-        ...res,
-        date: new Date(res.date),
-      }));
-      setMyReservations(reservationsWithDates);
-    }
-  }, []);
-
-  // Sauvegarder les réservations dans le localStorage
-  useEffect(() => {
-    console.log("Saving to localStorage:", {
-      desks,
-      meetingRooms,
-      myReservations,
-    });
-
-    localStorage.setItem("desks", JSON.stringify(desks));
-    localStorage.setItem("meetingRooms", JSON.stringify(meetingRooms));
-    localStorage.setItem("myReservations", JSON.stringify(myReservations));
-  }, [desks, meetingRooms, myReservations]);
-
-  // Mettre à jour l'état des ressources en fonction de la date sélectionnée
+  // Mettre à jour l'état des ressources en fonction des réservations
   useEffect(() => {
     const updateResourceStatus = () => {
       if (!selectedDate) return;
 
       const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
-      console.log("Updating resource status for date:", selectedDateStr);
 
       // Réinitialiser l'état des ressources
       const updatedDesks = initialDesksData.map((desk) => ({ ...desk, isBooked: false }));
@@ -144,20 +130,15 @@ const Dashboard: React.FC = () => {
       myReservations.forEach((reservation) => {
         const reservationDate = new Date(reservation.date);
         const reservationDateStr = format(reservationDate, "yyyy-MM-dd");
-        console.log("Checking reservation:", {
-          id: reservation.id,
-          date: reservationDateStr,
-          selectedDate: selectedDateStr,
-        });
 
         if (reservationDateStr === selectedDateStr) {
           if (reservation.type === "desk") {
-            const deskIndex = updatedDesks.findIndex((desk) => desk.id === reservation.id);
+            const deskIndex = updatedDesks.findIndex((desk) => desk.id === reservation.resource_id);
             if (deskIndex !== -1) {
               updatedDesks[deskIndex].isBooked = true;
             }
           } else {
-            const roomIndex = updatedRooms.findIndex((room) => room.id === reservation.id);
+            const roomIndex = updatedRooms.findIndex((room) => room.id === reservation.resource_id);
             if (roomIndex !== -1) {
               updatedRooms[roomIndex].isBooked = true;
             }
@@ -172,70 +153,89 @@ const Dashboard: React.FC = () => {
     updateResourceStatus();
   }, [selectedDate, myReservations]);
 
-  const handleReservation = (resourceId: string, date: Date, startTime: string, endTime: string) => {
+  const handleReservation = async (resourceId: string, date: Date, startTime: string, endTime: string) => {
     console.log("handleReservation called with:", { resourceId, date, startTime, endTime });
 
-    // Vérifier si la ressource est déjà réservée pour cette date et ces heures
-    const isAlreadyBooked = myReservations.some((reservation) => {
-      const reservationDate = new Date(reservation.date);
-      const selectedDateStr = format(date, "yyyy-MM-dd");
-      const reservationDateStr = format(reservationDate, "yyyy-MM-dd");
-
-      return (
-        reservation.id === resourceId &&
-        reservationDateStr === selectedDateStr &&
-        ((startTime >= reservation.startTime && startTime < reservation.endTime) ||
-          (endTime > reservation.startTime && endTime <= reservation.endTime) ||
-          (startTime <= reservation.startTime && endTime >= reservation.endTime))
-      );
-    });
-
-    if (isAlreadyBooked) {
+    if (!currentUser) {
       toast({
-        title: "Réservation impossible",
-        description: "Cette ressource est déjà réservée pour ces horaires.",
+        title: "Erreur",
+        description: "Vous devez être connecté pour faire une réservation.",
         variant: "destructive",
       });
       return;
     }
 
-    const newReservation: Reservation = {
-      id: resourceId,
-      type: selectedResource?.type || "desk",
-      date: new Date(date), // S'assurer que c'est un nouvel objet Date
-      startTime,
-      endTime,
-    };
+    try {
+      // Step 1: Check for existing reservations
+      const { data: existingReservations, error: checkError } = await supabase
+        .from("reservations")
+        .select("*")
+        .eq("resource_id", resourceId)
+        .eq("date", format(date, "yyyy-MM-dd"))
+        .or(`start_time.lte.${endTime},end_time.gte.${startTime}`);
 
-    setMyReservations((prev) => [...prev, newReservation]);
-    setSelectedResource(null);
+      if (checkError) throw checkError;
 
-    toast({
-      title: "Réservation confirmée",
-      description: `Vous avez réservé ${
-        selectedResource?.type === "desk" ? "le bureau" : "la salle"
-      } ${resourceId.replace(
-        selectedResource?.type === "desk" ? "bureau_flex_" : "salle_reunion_",
-        ""
-      )} pour le ${format(date, "dd MMMM yyyy", { locale: fr })} de ${startTime} à ${endTime}.`,
-    });
+      if (existingReservations?.length) {
+        toast({
+          title: "Réservation impossible",
+          description: "Cette ressource est déjà réservée pour ces horaires.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Step 2: Insert the reservation
+      const { error: insertError } = await supabase.from("reservations").insert([
+        {
+          user_id: currentUser.id,
+          resource_id: resourceId,
+          type: selectedResource?.type || "desk",
+          date: format(date, "yyyy-MM-dd"),
+          start_time: startTime,
+          end_time: endTime,
+        },
+      ]);
+
+      if (insertError) throw insertError;
+
+      setSelectedResource(null);
+
+      toast({
+        title: "Réservation confirmée",
+        description: `Vous avez réservé ${
+          selectedResource?.type === "desk" ? "le bureau" : "la salle"
+        } ${resourceId.replace(
+          selectedResource?.type === "desk" ? "bureau_flex_" : "salle_reunion_",
+          ""
+        )} pour le ${format(date, "dd MMMM yyyy", { locale: fr })} de ${startTime} à ${endTime}.`,
+      });
+    } catch (error) {
+      console.error("Error during reservation:", error);
+      toast({
+        title: "Erreur",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleCancelReservation = (reservation: Reservation) => {
-    setMyReservations(
-      myReservations.filter(
-        (r) =>
-          r.id !== reservation.id ||
-          r.date.getTime() !== reservation.date.getTime() ||
-          r.startTime !== reservation.startTime ||
-          r.endTime !== reservation.endTime
-      )
-    );
-
-    toast({
-      title: "Réservation annulée",
-      description: `Votre réservation a été annulée.`,
-    });
+  const handleCancelReservation = async (reservation: Reservation) => {
+    try {
+      const { error } = await supabase.from("reservations").delete().eq("id", reservation.id);
+      if (error) throw error;
+      toast({
+        title: "Réservation annulée",
+        description: `Votre réservation a été annulée.`,
+      });
+    } catch (error) {
+      console.error("Error during cancellation:", error);
+      toast({
+        title: "Erreur",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -302,10 +302,10 @@ const Dashboard: React.FC = () => {
                 {myReservations.map((reservation, index) => {
                   const resourceName =
                     reservation.type === "desk"
-                      ? `Bureau ${reservation.id.replace("bureau_flex_", "")}`
-                      : reservation.id === "PhoneBox"
+                      ? `Bureau ${reservation.resource_id.replace("bureau_flex_", "")}`
+                      : reservation.resource_id === "PhoneBox"
                       ? "PhoneBox"
-                      : `Salle ${reservation.id.replace("salle_reunion_", "")}`;
+                      : `Salle ${reservation.resource_id.replace("salle_reunion_", "")}`;
 
                   return (
                     <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
@@ -313,7 +313,7 @@ const Dashboard: React.FC = () => {
                         <p className="font-medium">{resourceName}</p>
                         <p className="text-sm text-gray-600">
                           {format(new Date(reservation.date), "dd MMMM yyyy", { locale: fr })} de{" "}
-                          {reservation.startTime} à {reservation.endTime}
+                          {reservation.start_time} à {reservation.end_time}
                         </p>
                       </div>
                       <button

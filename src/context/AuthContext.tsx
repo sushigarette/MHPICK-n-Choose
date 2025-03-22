@@ -1,9 +1,11 @@
 import supabase from "@/supabase";
+import { User } from "@supabase/supabase-js";
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
+  currentUser: User;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -26,12 +28,14 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [currentUser, setCurrentUser] = useState<User>(null); // Holds the current user info
 
   useEffect(() => {
     const checkUser = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      setCurrentUser(user); // Set current user
       setIsAuthenticated(!!user);
       setIsLoading(false);
     };
@@ -40,6 +44,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Optional: Listen for auth state changes
     const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
+      setCurrentUser(session?.user || null); // Update current user
       setIsAuthenticated(!!session?.user);
     });
 
@@ -47,8 +52,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    setCurrentUser(data.user); // Set current user after login
     setIsAuthenticated(true);
   };
 
@@ -61,11 +67,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    setCurrentUser(null); // Clear current user on logout
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout, signup }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, currentUser, login, logout, signup }}>
       {children}
     </AuthContext.Provider>
   );
