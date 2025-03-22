@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/layout/Header";
+import Header from "../components/Header";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../context/AuthContext";
 

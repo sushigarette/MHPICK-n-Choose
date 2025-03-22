@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import Header from "../components/layout/Header";
-import FloorPlan from "../components/floorplan/FloorPlan";
-import ReservationModal from "../components/reservation/ReservationModal";
+import Header from "../components/Header";
+import ReservationModal from "../components/ReservationModal";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, isBefore } from "date-fns";
@@ -15,49 +13,41 @@ import { Separator } from "@/components/ui/separator";
 import supabase from "@/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PostgrestError } from "@supabase/supabase-js";
+import PlanSVG from "@/components/PlanSVG";
+import { Reservation } from "@/interfaces";
 
 // Données des bureaux basées sur les coordonnées fournies
 const initialDesksData = [
-  { id: "bureau_flex_1", isBooked: false },
-  { id: "bureau_flex_2", isBooked: false },
-  { id: "bureau_flex_3", isBooked: false },
-  { id: "bureau_flex_4", isBooked: false },
-  { id: "bureau_flex_5", isBooked: false },
-  { id: "bureau_flex_6", isBooked: false },
-  { id: "bureau_flex_7", isBooked: false },
-  { id: "bureau_flex_8", isBooked: false },
-  { id: "bureau_flex_9", isBooked: false },
-  { id: "bureau_flex_10", isBooked: false },
-  { id: "bureau_flex_11", isBooked: false },
-  { id: "bureau_flex_12", isBooked: false },
-  { id: "bureau_flex_13", isBooked: false },
-  { id: "bureau_flex_14", isBooked: false },
-  { id: "bureau_flex_15", isBooked: false },
-  { id: "bureau_flex_16", isBooked: false },
-  { id: "bureau_flex_17", isBooked: false },
-  { id: "bureau_flex_18", isBooked: false },
-  { id: "bureau_flex_19", isBooked: false },
-  { id: "bureau_flex_20", isBooked: false },
-  { id: "bureau_flex_21", isBooked: false },
+  { id: "bureau_flex_1", cx: 662.63544, cy: 51.184258, isBooked: false },
+  { id: "bureau_flex_2", cx: 759.27979, cy: 49.0289, isBooked: false },
+  { id: "bureau_flex_3", cx: 662.27979, cy: 119.0289, isBooked: false },
+  { id: "bureau_flex_4", cx: 758.27979, cy: 117.0289, isBooked: false },
+  { id: "bureau_flex_5", cx: 990.55475, cy: 242.36128, isBooked: false },
+  { id: "bureau_flex_6", cx: 1059.2906, cy: 242.50903, isBooked: false },
+  { id: "bureau_flex_7", cx: 993.07758, cy: 337.6933, isBooked: false },
+  { id: "bureau_flex_8", cx: 988.77075, cy: 537.70813, isBooked: false },
+  { id: "bureau_flex_9", cx: 1058.5291, cy: 537.5379, isBooked: false },
+  { id: "bureau_flex_10", cx: 991.27979, cy: 631.1781, isBooked: false },
+  { id: "bureau_flex_11", cx: 1061.0483, cy: 631.92444, isBooked: false },
+  { id: "bureau_flex_12", cx: 989.45142, cy: 696.48419, isBooked: false },
+  { id: "bureau_flex_13", cx: 1057.8021, cy: 696.97668, isBooked: false },
+  { id: "bureau_flex_14", cx: 991.27979, cy: 790.43182, isBooked: false },
+  { id: "bureau_flex_15", cx: 1060.7499, cy: 791.67816, isBooked: false },
+  { id: "bureau_flex_16", cx: 989.06342, cy: 893.63336, isBooked: false },
+  { id: "bureau_flex_17", cx: 1057.9738, cy: 893.20056, isBooked: false },
+  { id: "bureau_flex_18", cx: 991.52606, cy: 987.32733, isBooked: false },
+  { id: "bureau_flex_19", cx: 1060.3992, cy: 987.73041, isBooked: false },
+  { id: "bureau_flex_20", cx: 743.63818, cy: 629.99915, isBooked: false },
+  { id: "bureau_flex_21", cx: 648.48883, cy: 632.57367, isBooked: false },
 ];
 
 // Données des salles de réunion basées sur les coordonnées fournies
 const initialMeetingRoomsData = [
-  { id: "salle_reunion_1", isBooked: false },
-  { id: "salle_reunion_2", isBooked: false },
-  { id: "PhoneBox", isBooked: false },
+  { id: "salle_reunion_1", cx: 556.05078, cy: 420.26019, isBooked: false },
+  { id: "salle_reunion_2", cx: 514.56506, cy: 109.79991, isBooked: false },
+  { id: "salle_reunion_3", cx: 64.481392, cy: 469.34985, isBooked: false },
+  { id: "PhoneBox", cx: 754.7262, cy: 394.64691, isBooked: false },
 ];
-
-type Reservation = {
-  id: number;
-  user_id: string; // UUID as a string
-  resource_id: string; // Resource identifier (e.g., "bureau_flex_3")
-  type: "desk" | "meeting_room"; // Assuming type can be either 'desk' or 'meeting_room'
-  date: string; // ISO date string
-  start_time: string; // Time string (HH:mm:ss)
-  end_time: string; // Time string (HH:mm:ss)
-  created_at: string; // ISO datetime string
-};
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
@@ -93,8 +83,6 @@ const Dashboard: React.FC = () => {
 
     if (error) return console.error("Error loading reservations:", error);
 
-    console.log(reservations);
-
     // Update MyReservations state
     const myRes = reservations.filter((r) => r.user_id == currentUser.id);
     setMyReservations(myRes);
@@ -116,8 +104,6 @@ const Dashboard: React.FC = () => {
   };
 
   const handleReservation = async (resourceId: string, date: Date, startTime: string, endTime: string) => {
-    console.log("handleReservation called with:", { resourceId, date, startTime, endTime });
-
     if (!currentUser) {
       toast({
         title: "Erreur",
@@ -227,7 +213,6 @@ const Dashboard: React.FC = () => {
                 selected={selectedDate}
                 onSelect={(date) => {
                   if (date) {
-                    console.log("New date selected:", format(date, "yyyy-MM-dd"));
                     setSelectedDate(new Date(date));
                   }
                 }}
@@ -249,11 +234,11 @@ const Dashboard: React.FC = () => {
               <span>Bureau réservé</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded bg-yellow-300 mr-2"></div>
+              <div className="w-4 h-4 rounded-full bg-yellow-300 mr-2"></div>
               <span>Salle disponible</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded bg-amber-300 mr-2"></div>
+              <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
               <span>Salle réservée</span>
             </div>
           </div>
@@ -296,7 +281,7 @@ const Dashboard: React.FC = () => {
 
         <div className="max-h-full grow flex align-center justify-center bg-white p-6 rounded-lg shadow-md">
           <div className="max-h-full md:grow-0 grow shadow-md">
-            <FloorPlan
+            <PlanSVG
               desks={desks}
               meetingRooms={meetingRooms}
               onSelect={(id, type) => setSelectedResource({ id, type })}
