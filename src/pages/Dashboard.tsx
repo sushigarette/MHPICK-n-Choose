@@ -115,44 +115,6 @@ const Dashboard: React.FC = () => {
     setMeetingRooms(updatedMeetingRooms);
   };
 
-  // Mettre à jour l'état des ressources en fonction des réservations
-  useEffect(() => {
-    const updateResourceStatus = () => {
-      if (!selectedDate) return;
-
-      const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
-
-      // Réinitialiser l'état des ressources
-      const updatedDesks = initialDesksData.map((desk) => ({ ...desk, isBooked: false }));
-      const updatedRooms = initialMeetingRoomsData.map((room) => ({ ...room, isBooked: false }));
-
-      // Mettre à jour l'état en fonction des réservations pour la date sélectionnée
-      myReservations.forEach((reservation) => {
-        const reservationDate = new Date(reservation.date);
-        const reservationDateStr = format(reservationDate, "yyyy-MM-dd");
-
-        if (reservationDateStr === selectedDateStr) {
-          if (reservation.type === "desk") {
-            const deskIndex = updatedDesks.findIndex((desk) => desk.id === reservation.resource_id);
-            if (deskIndex !== -1) {
-              updatedDesks[deskIndex].isBooked = true;
-            }
-          } else {
-            const roomIndex = updatedRooms.findIndex((room) => room.id === reservation.resource_id);
-            if (roomIndex !== -1) {
-              updatedRooms[roomIndex].isBooked = true;
-            }
-          }
-        }
-      });
-
-      setDesks(updatedDesks);
-      setMeetingRooms(updatedRooms);
-    };
-
-    updateResourceStatus();
-  }, [selectedDate, myReservations]);
-
   const handleReservation = async (resourceId: string, date: Date, startTime: string, endTime: string) => {
     console.log("handleReservation called with:", { resourceId, date, startTime, endTime });
 
