@@ -1,9 +1,11 @@
+import supabase from "@/supabase";
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: Record<string, unknown>) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -17,18 +19,6 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-const fakeApiLogin = (credentials: Record<string, unknown>): Promise<{ token: string }> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (credentials) {
-        resolve({ token: "fake-token" });
-      } else {
-        reject("Invalid credentials");
-      }
-    }, 1000);
-  });
-};
-
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -38,25 +28,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token);
-    setIsLoading(false);
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+      setIsLoading(false);
+    };
+
+    checkUser();
+
+    // Optional: Listen for auth state changes
+    const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
+      setIsAuthenticated(!!session?.user);
+    });
+
+    return () => subscription?.subscription.unsubscribe();
   }, []);
 
-  const login = async (credentials: Record<string, unknown>): Promise<void> => {
-    try {
-      const { token } = await fakeApiLogin(credentials);
-      localStorage.setItem("token", token);
-      setIsAuthenticated(true);
-    } catch (error) {
-      throw error;
-    }
+  const login = async (email: string, password: string): Promise<void> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    setIsAuthenticated(true);
   };
 
-  const logout = (): void => {
-    localStorage.removeItem("token");
+  const signup = async (email: string, password: string): Promise<void> => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    alert("Sign-up successful");
+  };
+
+  const logout = async (): Promise<void> => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
     setIsAuthenticated(false);
   };
 
-  return <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout, signup }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
