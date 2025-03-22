@@ -8,7 +8,6 @@ body {
 #root {
   height: 100vh;
   display: flex;
-  background-color: red;
 }
 
 .logo {

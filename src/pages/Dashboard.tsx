@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import supabase from "@/supabase";
 
 // Données des bureaux basées sur les coordonnées fournies
 const initialDesksData = [
@@ -60,6 +61,20 @@ const Dashboard: React.FC = () => {
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedResource, setSelectedResource] = useState<{ id: string; type: "desk" | "room" } | null>(null);
+
+  const [todos, setTodos] = useState([]);
+
+  useEffect(() => {
+    const getTodos = async () => {
+      const { data: todos } = await supabase.from("todos").select();
+
+      if (todos.length > 1) {
+        setTodos(todos);
+      }
+    };
+
+    getTodos();
+  }, []);
 
   // Simuler un utilisateur connecté
   const currentUser = {

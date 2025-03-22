@@ -27,7 +27,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, register: registerUser } = useAuth();
+  const { login, signup } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,7 +44,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
         await login(values.email, values.password);
         toast({ title: "Connexion réussie", description: "Bienvenue sur votre espace de réservation." });
       } else {
-        await registerUser(values.email, values.password);
+        await signup(values.email, values.password);
         toast({
           title: "Compte créé avec succès",
           description: "Votre compte a été créé. Vous pouvez maintenant vous connecter.",
