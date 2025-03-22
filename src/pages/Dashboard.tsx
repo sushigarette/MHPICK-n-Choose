@@ -161,6 +161,7 @@ const Dashboard: React.FC = () => {
 
       if (insertError) throw insertError;
 
+      loadReservations();
       setSelectedResource(null);
 
       toast({
@@ -190,6 +191,7 @@ const Dashboard: React.FC = () => {
         title: "Réservation annulée",
         description: `Votre réservation a été annulée.`,
       });
+      loadReservations();
     } catch (error) {
       console.error("Error during cancellation:", error);
       toast({
