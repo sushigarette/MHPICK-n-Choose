@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Header from "../components/layout/Header";
-import ReservationModal from "../components/reservation/ReservationModal";
+import Header from "../components/Header";
+import ReservationModal from "../components/ReservationModal";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, isBefore } from "date-fns";
@@ -13,7 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import supabase from "@/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PostgrestError } from "@supabase/supabase-js";
-import PlanSVG from "@/components/floorplan/PlanSVG";
+import PlanSVG from "@/components/PlanSVG";
+import { Reservation } from "@/interfaces";
 
 // Données des bureaux basées sur les coordonnées fournies
 const initialDesksData = [
@@ -47,17 +48,6 @@ const initialMeetingRoomsData = [
   { id: "salle_reunion_3", cx: 64.481392, cy: 469.34985, isBooked: false },
   { id: "PhoneBox", cx: 754.7262, cy: 394.64691, isBooked: false },
 ];
-
-type Reservation = {
-  id: number;
-  user_id: string; // UUID as a string
-  resource_id: string; // Resource identifier (e.g., "bureau_flex_3")
-  type: "desk" | "meeting_room"; // Assuming type can be either 'desk' or 'meeting_room'
-  date: string; // ISO date string
-  start_time: string; // Time string (HH:mm:ss)
-  end_time: string; // Time string (HH:mm:ss)
-  created_at: string; // ISO datetime string
-};
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
@@ -244,11 +234,11 @@ const Dashboard: React.FC = () => {
               <span>Bureau réservé</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded bg-yellow-300 mr-2"></div>
+              <div className="w-4 h-4 rounded-full bg-yellow-300 mr-2"></div>
               <span>Salle disponible</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 rounded bg-amber-300 mr-2"></div>
+              <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
               <span>Salle réservée</span>
             </div>
           </div>

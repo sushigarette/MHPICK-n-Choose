@@ -1,56 +1,55 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import Header from "../components/layout/Header";
+import Header from "../components/Header";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Reservation } from "@/interfaces";
+import supabase from "@/supabase";
+import { PostgrestError } from "@supabase/supabase-js";
+import { useAuth } from "@/context/AuthContext";
 
 const Reservations: React.FC = () => {
   const { toast } = useToast();
-  const [myReservations, setMyReservations] = useState<{ id: string; type: "desk" | "room"; date: Date }[]>([]);
+  const { currentUser } = useAuth();
+  const [myReservations, setMyReservations] = useState<Reservation[]>([]);
 
   // Chargement des réservations depuis localStorage
   useEffect(() => {
-    const savedReservations = localStorage.getItem("myReservations");
-    if (savedReservations) {
-      setMyReservations(JSON.parse(savedReservations));
-    }
+    loadMyReservations();
   }, []);
 
-  const handleCancelReservation = (resourceId: string, resourceType: "desk" | "room") => {
-    // Mettre à jour les réservations
-    setMyReservations(myReservations.filter((reservation) => reservation.id !== resourceId));
+  const loadMyReservations = async () => {
+    const {
+      data: reservations,
+      error,
+    }: {
+      data: Reservation[] | null; // The data will be an array of Reservation objects or null
+      error: PostgrestError | null; // The error can be a PostgrestError or null
+    } = await supabase.from("reservations").select("*").eq("user_id", currentUser.id);
 
-    // Mettre à jour les bureaux ou salles
-    if (resourceType === "desk") {
-      const savedDesks = localStorage.getItem("desks");
-      if (savedDesks) {
-        const desks = JSON.parse(savedDesks);
-        const updatedDesks = desks.map((desk: any) =>
-          desk.id === resourceId ? { ...desk, isBooked: false, bookedBy: null } : desk
-        );
-        localStorage.setItem("desks", JSON.stringify(updatedDesks));
-      }
-    } else {
-      const savedRooms = localStorage.getItem("meetingRooms");
-      if (savedRooms) {
-        const rooms = JSON.parse(savedRooms);
-        const updatedRooms = rooms.map((room: any) =>
-          room.id === resourceId ? { ...room, isBooked: false, bookedBy: null } : room
-        );
-        localStorage.setItem("meetingRooms", JSON.stringify(updatedRooms));
-      }
+    if (error) return console.error("Error loading reservations:", error);
+
+    // Update MyReservations state
+    setMyReservations(reservations);
+  };
+
+  const handleCancelReservation = async (reservation: Reservation) => {
+    try {
+      const { error } = await supabase.from("reservations").delete().eq("id", reservation.id);
+      if (error) throw error;
+      toast({
+        title: "Réservation annulée",
+        description: `Votre réservation a été annulée.`,
+      });
+      loadMyReservations();
+    } catch (error) {
+      console.error("Error during cancellation:", error);
+      toast({
+        title: "Erreur",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
     }
-
-    // Sauvegarder les réservations mises à jour
-    localStorage.setItem(
-      "myReservations",
-      JSON.stringify(myReservations.filter((reservation) => reservation.id !== resourceId))
-    );
-
-    toast({
-      title: "Réservation annulée",
-      description: `Votre réservation a été annulée avec succès.`,
-    });
   };
 
   return (
@@ -81,10 +80,10 @@ const Reservations: React.FC = () => {
                 {myReservations.map((reservation, index) => {
                   const resourceName =
                     reservation.type === "desk"
-                      ? `Bureau ${reservation.id.replace("desk-", "")}`
-                      : reservation.id === "phonebox"
+                      ? `Bureau ${reservation.resource_id.replace("desk-", "")}`
+                      : reservation.resource_id === "phonebox"
                       ? "PhoneBox"
-                      : `Salle ${reservation.id.replace("room-", "")}`;
+                      : `Salle ${reservation.resource_id.replace("room-", "")}`;
 
                   const reservationDate = new Date(reservation.date);
 
@@ -97,10 +96,7 @@ const Reservations: React.FC = () => {
                             Réservé pour le {reservationDate.toLocaleDateString("fr-FR")}
                           </p>
                         </div>
-                        <Button
-                          variant="destructive"
-                          onClick={() => handleCancelReservation(reservation.id, reservation.type)}
-                        >
+                        <Button variant="destructive" onClick={() => handleCancelReservation(reservation)}>
                           Annuler
                         </Button>
                       </div>
