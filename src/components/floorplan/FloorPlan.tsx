@@ -2,8 +2,8 @@ import React from "react";
 import PlanSVG from "./PlanSVG";
 
 interface FloorPlanProps {
-  desks: { id: string; isBooked: boolean }[];
-  meetingRooms: { id: string; isBooked: boolean }[];
+  desks: { id: string; isBooked: boolean; cx: number; cy: number }[];
+  meetingRooms: { id: string; isBooked: boolean; cx: number; cy: number }[];
   onSelect: (id: string, type: "desk" | "room") => void;
 }
 
