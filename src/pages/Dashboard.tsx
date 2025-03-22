@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import Header from "../components/layout/Header";
-import FloorPlan from "../components/floorplan/FloorPlan";
 import ReservationModal from "../components/reservation/ReservationModal";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
@@ -15,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import supabase from "@/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PostgrestError } from "@supabase/supabase-js";
+import PlanSVG from "@/components/floorplan/PlanSVG";
 
 // Données des bureaux basées sur les coordonnées fournies
 const initialDesksData = [
@@ -292,7 +291,7 @@ const Dashboard: React.FC = () => {
 
         <div className="max-h-full grow flex align-center justify-center bg-white p-6 rounded-lg shadow-md">
           <div className="max-h-full md:grow-0 grow shadow-md">
-            <FloorPlan
+            <PlanSVG
               desks={desks}
               meetingRooms={meetingRooms}
               onSelect={(id, type) => setSelectedResource({ id, type })}
