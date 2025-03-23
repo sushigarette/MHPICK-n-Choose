@@ -61,7 +61,16 @@ const Dashboard: React.FC = () => {
   // Charger les réservations depuis Supabase
   useEffect(() => {
     loadReservations();
+    fetchResourcesAndReservations();
   }, [selectedDate]);
+
+  const fetchResourcesAndReservations = async (): Promise<any[]> => {
+    const { data: resources, error } = await supabase.from("resources").select("*");
+
+    if (error) throw error;
+    console.log("resources", resources);
+    return resources || [];
+  };
 
   const loadReservations = async () => {
     // Get the start and end of the day
