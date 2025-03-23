@@ -52,11 +52,11 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ isOpen, onClose, re
           <DialogHeader>
             <DialogTitle>Réservation existante</DialogTitle>
           </DialogHeader>
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-4 items-center flex-col md:flex-row justify-center md:justify-start">
             <img
               src={resource.reservations[0].profiles.avatar_url || "/lio2.png"}
               alt="Profile"
-              className="w-16 h-16 rounded-full object-cover"
+              className="min-w-16 min-h-16 w-16 h-16 rounded-full object-cover"
             />
             <p>Cette ressource est déjà réservée par {resource.reservations[0].profiles.display_name}</p>
           </div>
