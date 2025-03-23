@@ -7,28 +7,18 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
+  const { currentUser, displayName: oldDisplayName, avatarUrl: oldAvatarUrl } = useAuth();
   const { toast } = useToast();
-  const { currentUser } = useAuth();
   const [displayName, setDisplayName] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>("");
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("display_name, avatar_url")
-        .eq("id", currentUser?.id)
-        .single();
-      if (data) {
-        setDisplayName(data.display_name);
-        setAvatarUrl(data.avatar_url);
-        setIsLoading(false);
-      }
-      if (error) console.error("Error fetching profile:", error);
-    };
-    if (currentUser) fetchProfile();
-  }, [currentUser]);
+    setDisplayName(oldDisplayName);
+  }, [oldDisplayName]);
+
+  useEffect(() => {
+    setAvatarUrl(oldAvatarUrl);
+  }, [oldAvatarUrl]);
 
   const handleSave = async () => {
     const { error } = await supabase
@@ -49,7 +39,7 @@ const Profile = () => {
       <Header />
       <div className="flex grow bg-white p-6 rounded-lg shadow-md w-full items-center justify-center">
         <div className="flex flex-col gap-4 items-start">
-          {isLoading ? (
+          {!oldDisplayName ? (
             <>Chargement...</>
           ) : (
             <>
@@ -65,7 +55,7 @@ const Profile = () => {
                 <input
                   id="displayName"
                   type="text"
-                  value={displayName}
+                  value={displayName ?? ""}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Nom affiché"
                   className="p-2 border rounded w-full"
@@ -76,7 +66,7 @@ const Profile = () => {
                 <input
                   id="url"
                   type="text"
-                  value={avatarUrl}
+                  value={avatarUrl ?? ""}
                   onChange={(e) => setAvatarUrl(e.target.value)}
                   placeholder="URL Avatar"
                   className="p-2 border rounded w-full"

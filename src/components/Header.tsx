@@ -17,7 +17,7 @@ import { useAuth } from "../context/AuthContext";
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, displayName, avatarUrl } = useAuth();
   const [userEmail, setUserEmail] = useState("");
 
   const handleLogout = () => {
@@ -39,7 +39,7 @@ const Header: React.FC = () => {
           className="flex items-center space-x-2 cursor-pointer"
           onClick={() => navigate("/")}
         >
-          <img className="h-8 " src="/lio.png"></img>
+          <img className="h-8 " src={"/lio.png"}></img>
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text">
             MHPick
           </span>
@@ -49,11 +49,12 @@ const Header: React.FC = () => {
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Button variant="ghost">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/lio2.png" alt="User" />
+                    <AvatarImage src={avatarUrl || "/lio.png"} alt="User" />
                     <AvatarFallback>{userEmail.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
+                  <p>{displayName}</p>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
