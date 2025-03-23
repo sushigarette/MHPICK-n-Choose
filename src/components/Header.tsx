@@ -65,6 +65,7 @@ const Header: React.FC = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/dashboard")}>Tableau de bord</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/profile")}>Mon profil</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/reservations")}>Mes réservations</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>Déconnexion</DropdownMenuItem>

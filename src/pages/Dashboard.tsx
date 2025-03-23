@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
       error: PostgrestError | null; // The error can be a PostgrestError or null
     } = await supabase
       .from("reservations")
-      .select("*, profiles:user_id(display_name)")
+      .select("*, profiles:user_id(*)")
       .filter("date", "eq", format(selectedDate, "yyyy-MM-dd"));
 
     if (error) return console.error("Error loading reservations:", error);

@@ -9,6 +9,7 @@ export type Reservation = {
   created_at: string; // ISO datetime string
   profiles: {
     display_name: string;
+    avatar_url: string;
   };
 };
 
