@@ -14,69 +14,46 @@ import supabase from "@/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PostgrestError } from "@supabase/supabase-js";
 import PlanSVG from "@/components/PlanSVG";
-import { Reservation } from "@/interfaces";
-
-// Données des bureaux basées sur les coordonnées fournies
-const initialDesksData = [
-  { id: "bureau_flex_1", cx: 662.63544, cy: 51.184258, isBooked: false },
-  { id: "bureau_flex_2", cx: 759.27979, cy: 49.0289, isBooked: false },
-  { id: "bureau_flex_3", cx: 662.27979, cy: 119.0289, isBooked: false },
-  { id: "bureau_flex_4", cx: 758.27979, cy: 117.0289, isBooked: false },
-  { id: "bureau_flex_5", cx: 990.55475, cy: 242.36128, isBooked: false },
-  { id: "bureau_flex_6", cx: 1059.2906, cy: 242.50903, isBooked: false },
-  { id: "bureau_flex_7", cx: 993.07758, cy: 337.6933, isBooked: false },
-  { id: "bureau_flex_8", cx: 988.77075, cy: 537.70813, isBooked: false },
-  { id: "bureau_flex_9", cx: 1058.5291, cy: 537.5379, isBooked: false },
-  { id: "bureau_flex_10", cx: 991.27979, cy: 631.1781, isBooked: false },
-  { id: "bureau_flex_11", cx: 1061.0483, cy: 631.92444, isBooked: false },
-  { id: "bureau_flex_12", cx: 989.45142, cy: 696.48419, isBooked: false },
-  { id: "bureau_flex_13", cx: 1057.8021, cy: 696.97668, isBooked: false },
-  { id: "bureau_flex_14", cx: 991.27979, cy: 790.43182, isBooked: false },
-  { id: "bureau_flex_15", cx: 1060.7499, cy: 791.67816, isBooked: false },
-  { id: "bureau_flex_16", cx: 989.06342, cy: 893.63336, isBooked: false },
-  { id: "bureau_flex_17", cx: 1057.9738, cy: 893.20056, isBooked: false },
-  { id: "bureau_flex_18", cx: 991.52606, cy: 987.32733, isBooked: false },
-  { id: "bureau_flex_19", cx: 1060.3992, cy: 987.73041, isBooked: false },
-  { id: "bureau_flex_20", cx: 743.63818, cy: 629.99915, isBooked: false },
-  { id: "bureau_flex_21", cx: 648.48883, cy: 632.57367, isBooked: false },
-];
-
-// Données des salles de réunion basées sur les coordonnées fournies
-const initialMeetingRoomsData = [
-  { id: "salle_reunion_1", cx: 556.05078, cy: 420.26019, isBooked: false },
-  { id: "salle_reunion_2", cx: 514.56506, cy: 109.79991, isBooked: false },
-  { id: "salle_reunion_3", cx: 64.481392, cy: 469.34985, isBooked: false },
-  { id: "PhoneBox", cx: 754.7262, cy: 394.64691, isBooked: false },
-];
+import { Reservation, Resource } from "@/interfaces";
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
-  const [desks, setDesks] = useState(initialDesksData);
-  const [meetingRooms, setMeetingRooms] = useState(initialMeetingRoomsData);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedResource, setSelectedResource] = useState<{ id: string; type: "desk" | "room" } | null>(null);
   const { currentUser } = useAuth();
 
-  // Charger les réservations depuis Supabase
+  // Only fetch resources once
   useEffect(() => {
-    loadReservations();
-    fetchResourcesAndReservations();
+    fetchResources();
+  }, []);
+
+  // Fetch reservations on every date change
+  useEffect(() => {
+    if (selectedDate) fetchReservations();
   }, [selectedDate]);
 
-  const fetchResourcesAndReservations = async (): Promise<any[]> => {
-    const { data: resources, error } = await supabase.from("resources").select("*");
+  useEffect(() => {
+    if (resources.length) {
+      const updatedResources = resources.map((resource) => {
+        const res = reservations.filter((res) => res.resource_id === resource.id);
+        return { ...resource, reservations: res };
+      });
+      setResources(updatedResources);
+      console.log(updatedResources);
+    }
+  }, [reservations]);
 
+  const fetchResources = async (): Promise<void> => {
+    const { data: resources, error } = await supabase.from("resources").select("*");
     if (error) throw error;
-    console.log("resources", resources);
-    return resources || [];
+    setResources(resources);
+    if (selectedDate) fetchReservations();
   };
 
-  const loadReservations = async () => {
-    // Get the start and end of the day
-    const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0)); // Start of the day (00:00)
-    const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999)); // End of the day (23:59)
-
+  const fetchReservations = async () => {
     // Fetch reservations for the given day
     const {
       data: reservations,
@@ -84,32 +61,13 @@ const Dashboard: React.FC = () => {
     }: {
       data: Reservation[] | null; // The data will be an array of Reservation objects or null
       error: PostgrestError | null; // The error can be a PostgrestError or null
-    } = await supabase
-      .from("reservations")
-      .select("*")
-      .gte("date", startOfDay.toISOString())
-      .lte("date", endOfDay.toISOString());
+    } = await supabase.from("reservations").select("*").filter("date", "eq", format(selectedDate, "yyyy-MM-dd"));
 
     if (error) return console.error("Error loading reservations:", error);
 
-    // Update MyReservations state
+    setReservations([...reservations]);
     const myRes = reservations.filter((r) => r.user_id == currentUser.id);
     setMyReservations(myRes);
-
-    // Assuming desks and meetingRooms are arrays with an 'id' field to match with reservations
-    const updatedDesks = desks.map((desk) => ({
-      ...desk,
-      isBooked: reservations.some((res) => res.resource_id === desk.id),
-    }));
-
-    const updatedMeetingRooms = meetingRooms.map((room) => ({
-      ...room,
-      isBooked: reservations.some((res) => res.resource_id === room.id),
-    }));
-
-    // Update state for desks and meeting rooms
-    setDesks(updatedDesks);
-    setMeetingRooms(updatedMeetingRooms);
   };
 
   const handleReservation = async (resourceId: string, date: Date, startTime: string, endTime: string) => {
@@ -156,7 +114,7 @@ const Dashboard: React.FC = () => {
 
       if (insertError) throw insertError;
 
-      loadReservations();
+      fetchReservations();
       setSelectedResource(null);
 
       toast({
@@ -186,7 +144,7 @@ const Dashboard: React.FC = () => {
         title: "Réservation annulée",
         description: `Votre réservation a été annulée.`,
       });
-      loadReservations();
+      fetchReservations();
     } catch (error) {
       console.error("Error during cancellation:", error);
       toast({
@@ -290,11 +248,7 @@ const Dashboard: React.FC = () => {
 
         <div className="max-h-full grow flex align-center justify-center bg-white p-6 rounded-lg shadow-md">
           <div className="max-h-full md:grow-0 grow shadow-md">
-            <PlanSVG
-              desks={desks}
-              meetingRooms={meetingRooms}
-              onSelect={(id, type) => setSelectedResource({ id, type })}
-            />
+            <PlanSVG resources={resources} onSelect={(id, type) => setSelectedResource({ id, type })} />
           </div>
         </div>
       </div>
