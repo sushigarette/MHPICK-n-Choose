@@ -6,6 +6,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   currentUser: User;
+  displayName: string;
+  avatarUrl: string;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -29,6 +31,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [currentUser, setCurrentUser] = useState<User>(null); // Holds the current user info
+  const [displayName, setDisplayName] = useState<string>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string>(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -50,6 +54,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     return () => subscription?.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("id", currentUser?.id)
+        .single();
+      if (data) {
+        setDisplayName(data.display_name);
+        setAvatarUrl(data.avatar_url);
+        setIsLoading(false);
+      }
+      if (error) console.error("Error fetching profile:", error);
+    };
+    if (currentUser) fetchProfile();
+  }, [currentUser]);
 
   const login = async (email: string, password: string): Promise<void> => {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
@@ -79,7 +100,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, currentUser, login, logout, signup }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, isLoading, currentUser, displayName, avatarUrl, login, logout, signup }}
+    >
       {children}
     </AuthContext.Provider>
   );

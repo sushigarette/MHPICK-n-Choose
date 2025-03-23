@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "@/components/ui/toaster";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
+            <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
             <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

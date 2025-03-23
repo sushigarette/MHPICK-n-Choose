@@ -44,6 +44,7 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect }) => {
           {/* Salles de réunion */}
           {resources.map((resource) => (
             <motion.ellipse
+              key={resource.id}
               id={resource.id}
               cx={resource.cx}
               cy={resource.cy}
