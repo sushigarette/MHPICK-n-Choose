@@ -1,10 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Resource } from "@/interfaces";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface PlanSVGProps {
   resources: Resource[];
-  onSelect: (id: string, type: "desk" | "room") => void;
+  onSelect: (resource: Resource) => void;
 }
 
 const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect }) => {
@@ -43,7 +44,6 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect }) => {
           {/* Salles de réunion */}
           {resources.map((resource) => (
             <motion.ellipse
-              key={resource.id}
               id={resource.id}
               cx={resource.cx}
               cy={resource.cy}
@@ -52,7 +52,7 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect }) => {
               className={`cursor-pointer ${getClassName(resource.reservations, resource.type)}`}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => onSelect(resource.id, resource.type)}
+              onClick={() => onSelect(resource)}
             />
           ))}
         </g>

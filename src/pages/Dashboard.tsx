@@ -22,7 +22,7 @@ const Dashboard: React.FC = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedResource, setSelectedResource] = useState<{ id: string; type: "desk" | "room" } | null>(null);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const { currentUser } = useAuth();
 
   // Only fetch resources once
@@ -61,7 +61,10 @@ const Dashboard: React.FC = () => {
     }: {
       data: Reservation[] | null; // The data will be an array of Reservation objects or null
       error: PostgrestError | null; // The error can be a PostgrestError or null
-    } = await supabase.from("reservations").select("*").filter("date", "eq", format(selectedDate, "yyyy-MM-dd"));
+    } = await supabase
+      .from("reservations")
+      .select("*, profiles:user_id(display_name)")
+      .filter("date", "eq", format(selectedDate, "yyyy-MM-dd"));
 
     if (error) return console.error("Error loading reservations:", error);
 
@@ -248,7 +251,7 @@ const Dashboard: React.FC = () => {
 
         <div className="max-h-full grow flex align-center justify-center bg-white p-6 rounded-lg shadow-md">
           <div className="max-h-full md:grow-0 grow shadow-md">
-            <PlanSVG resources={resources} onSelect={(id, type) => setSelectedResource({ id, type })} />
+            <PlanSVG resources={resources} onSelect={(resource) => setSelectedResource(resource)} />
           </div>
         </div>
       </div>
@@ -257,8 +260,7 @@ const Dashboard: React.FC = () => {
         <ReservationModal
           isOpen={!!selectedResource}
           onClose={() => setSelectedResource(null)}
-          resourceId={selectedResource.id}
-          resourceType={selectedResource.type}
+          resource={selectedResource}
           selectedDate={selectedDate}
           onConfirm={handleReservation}
         />

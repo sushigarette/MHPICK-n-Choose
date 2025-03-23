@@ -10,24 +10,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Resource } from "@/interfaces";
 
 interface ReservationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  resourceId: string;
-  resourceType: "desk" | "room";
+  resource: Resource;
   selectedDate: Date;
   onConfirm: (resourceId: string, date: Date, startTime: string, endTime: string) => void;
 }
 
-const ReservationModal: React.FC<ReservationModalProps> = ({
-  isOpen,
-  onClose,
-  resourceId,
-  resourceType,
-  selectedDate,
-  onConfirm,
-}) => {
+const ReservationModal: React.FC<ReservationModalProps> = ({ isOpen, onClose, resource, selectedDate, onConfirm }) => {
   const [startTime, setStartTime] = useState<string>("09:00");
   const [endTime, setEndTime] = useState<string>("17:00");
   const { toast } = useToast();
@@ -47,15 +40,36 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
       return;
     }
 
-    onConfirm(resourceId, selectedDate, startTime, endTime);
+    onConfirm(resource.id, selectedDate, startTime, endTime);
     onClose();
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+  // If there are reservations, show the reservation user ID; otherwise, show the normal reservation form.
+  const renderDialogContent = () => {
+    if (resource.reservations && resource.reservations.length > 0) {
+      return (
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Réservation existante</DialogTitle>
+            <DialogDescription>
+              Cette ressource est déjà réservée par l'utilisateur {resource.reservations[0].profiles.display_name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      );
+    }
+
+    // If no reservations, show the reservation form.
+    return (
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Réserver {resourceType === "desk" ? "un bureau" : "une salle de réunion"}</DialogTitle>
+          <DialogTitle>Réserver {resource.type === "desk" ? "un bureau" : "une salle de réunion"}</DialogTitle>
           <DialogDescription>Sélectionnez les heures pour votre réservation</DialogDescription>
         </DialogHeader>
 
@@ -101,6 +115,12 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
           <Button onClick={handleConfirm}>Confirmer</Button>
         </DialogFooter>
       </DialogContent>
+    );
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {renderDialogContent()}
     </Dialog>
   );
 };
