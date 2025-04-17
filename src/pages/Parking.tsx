@@ -237,7 +237,14 @@ const Parking: React.FC = () => {
                         Annuler
                       </Button>
                     ) : (
-                      <p className="text-sm mt-2">Réservée</p>
+                      <div className="mt-2 flex items-center justify-center gap-2">
+                        <img
+                          src={reservation.profiles?.avatar_url || "/lio2.png"}
+                          alt="Profile"
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
+                        <p className="text-sm">Réservée par {reservation.profiles?.display_name || "un utilisateur"}</p>
+                      </div>
                     )
                   ) : (
                     <Button
