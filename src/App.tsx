@@ -11,6 +11,7 @@ import Reservations from "./pages/Reservations";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "@/components/ui/toaster";
 import Profile from "./pages/Profile";
+import Parking from "./pages/Parking";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
             <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
             <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />
+            <Route path="/parking" element={<PrivateRoute element={<Parking />} />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -15,7 +15,7 @@ export type Reservation = {
 
 export type Resource = {
   id: string;
-  type: "desk" | "room";
+  type: "desk" | "room" | "slot";
   name: string;
   capacity: number;
   cx: number;
