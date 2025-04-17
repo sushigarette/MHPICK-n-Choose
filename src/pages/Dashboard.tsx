@@ -231,6 +231,8 @@ const Dashboard: React.FC = () => {
                   const resourceName =
                     reservation.type === "desk"
                       ? `Bureau ${reservation.resource_id.replace("bureau_flex_", "")}`
+                      : reservation.type === "slot"
+                      ? `Place de parking ${reservation.resource_id.replace("place_", "")}`
                       : reservation.resource_id === "PhoneBox"
                       ? "PhoneBox"
                       : `Salle ${reservation.resource_id.replace("salle_reunion_", "")}`;
