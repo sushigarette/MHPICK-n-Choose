@@ -206,7 +206,7 @@ const Dashboard: React.FC = () => {
           <div className="flex flex-wrap gap-2">
             <div className="flex items-center">
               <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
-              <span>Bureau disponible</span>
+              <span>Bureau disponible ({resources.filter(r => r.type === 'desk' && !r.reservations?.length).length}/{resources.filter(r => r.type === 'desk').length})</span>
             </div>
             <div className="flex items-center">
               <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
@@ -214,7 +214,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="flex items-center">
               <div className="w-4 h-4 rounded-full bg-yellow-300 mr-2"></div>
-              <span>Salle disponible</span>
+              <span>Salle disponible ({resources.filter(r => r.type === 'room' && !r.reservations?.length).length}/{resources.filter(r => r.type === 'room').length})</span>
             </div>
             <div className="flex items-center">
               <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>

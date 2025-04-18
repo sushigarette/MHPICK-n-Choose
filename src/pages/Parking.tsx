@@ -22,7 +22,6 @@ const Parking: React.FC = () => {
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
   const { currentUser } = useAuth();
 
-  // Initialiser les 12 places de parking une seule fois
   useEffect(() => {
     const spots: Resource[] = Array.from({ length: 12 }, (_, i) => ({
       id: `place_${i + 1}`,
@@ -36,7 +35,6 @@ const Parking: React.FC = () => {
     setParkingSpots(spots);
   }, []);
 
-  // Charger les réservations pour la date sélectionnée
   useEffect(() => {
     if (selectedDate) fetchReservations();
   }, [selectedDate]);
@@ -54,16 +52,12 @@ const Parking: React.FC = () => {
     }
 
     setReservations(reservations || []);
-
-    // Mettre à jour l'état des places sans réinitialiser les places
     setParkingSpots(prevSpots => 
       prevSpots.map(spot => ({
         ...spot,
         reservations: reservations?.filter(res => res.resource_id === spot.id) || []
       }))
     );
-
-    // Mettre à jour mes réservations
     const myRes = reservations?.filter(r => r.user_id === currentUser?.id) || [];
     setMyReservations(myRes);
   };
@@ -91,12 +85,10 @@ const Parking: React.FC = () => {
       ]);
 
       if (error) throw error;
-
       toast({
         title: "Réservation confirmée",
         description: `Vous avez réservé la place de parking ${spotId.replace("place_", "")} pour le ${format(selectedDate, "dd MMMM yyyy", { locale: fr })}.`,
       });
-
       fetchReservations();
     } catch (error) {
       console.error("Error during reservation:", error);
@@ -116,12 +108,10 @@ const Parking: React.FC = () => {
         .eq("id", reservation.id);
 
       if (error) throw error;
-
       toast({
         title: "Réservation annulée",
         description: "Votre réservation a été annulée.",
       });
-
       fetchReservations();
     } catch (error) {
       console.error("Error during cancellation:", error);
@@ -134,9 +124,9 @@ const Parking: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col grow gap-2 bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <div className="flex flex-col md:flex-row grow gap-2">
+      <div className="flex flex-col md:flex-row grow gap-4 p-4">
         <div className="flex gap-4 flex-col bg-white p-6 rounded-lg shadow-md md:max-w-md w-full">
           <div className="flex justify-between items-center">
             <h2 className="font-semibold">Sélectionnez une date</h2>
@@ -209,8 +199,10 @@ const Parking: React.FC = () => {
         </div>
 
         <div className="grow bg-white p-6 rounded-lg shadow-md">
-          <h2 className="font-semibold mb-4">Places disponibles</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <h2 className="font-semibold mb-4">
+            Places disponibles ({parkingSpots.filter(spot => !spot.reservations?.length).length}/{parkingSpots.length})
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {parkingSpots.map((spot) => {
               const isReserved = spot.reservations.length > 0;
               const isMyReservation = spot.reservations.some((r: any) => r.user_id === currentUser?.id);
@@ -219,29 +211,29 @@ const Parking: React.FC = () => {
               return (
                 <div
                   key={spot.id}
-                  className={`p-4 rounded-lg text-center ${
+                  className={`p-6 rounded-lg text-center min-h-[180px] flex flex-col justify-between ${
                     isReserved
                       ? "bg-red-100 text-red-700"
                       : "bg-green-100 text-green-700"
                   }`}
                 >
-                  <p className="font-medium">Place {spot.id.replace("place_", "")}</p>
+                  <p className="font-medium text-xl">Place {spot.id.replace("place_", "")}</p>
                   {isReserved ? (
                     isMyReservation ? (
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => handleCancelReservation(reservation)}
-                        className="mt-2"
+                        className="mt-4"
                       >
                         Annuler
                       </Button>
                     ) : (
-                      <div className="mt-2 flex items-center justify-center gap-2">
+                      <div className="mt-4 flex items-center justify-center gap-2">
                         <img
                           src={reservation.profiles?.avatar_url || "/lio2.png"}
                           alt="Profile"
-                          className="w-6 h-6 rounded-full object-cover"
+                          className="w-8 h-8 rounded-full object-cover"
                         />
                         <p className="text-sm">Réservée par {reservation.profiles?.display_name || "un utilisateur"}</p>
                       </div>
@@ -251,7 +243,7 @@ const Parking: React.FC = () => {
                       variant="default"
                       size="sm"
                       onClick={() => handleReservation(spot.id)}
-                      className="mt-2"
+                      className="mt-4"
                     >
                       Réserver
                     </Button>
