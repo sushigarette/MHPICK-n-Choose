@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import supabase from "@/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PostgrestError } from "@supabase/supabase-js";
@@ -23,6 +24,7 @@ const Dashboard: React.FC = () => {
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("bureaux");
   const { currentUser } = useAuth();
 
   // Only fetch resources once
@@ -66,94 +68,36 @@ const Dashboard: React.FC = () => {
     } = await supabase
       .from("reservations")
       .select("*, profiles:user_id(*)")
-      .filter("date", "eq", format(selectedDate, "yyyy-MM-dd"))
-      .in("type", ["desk", "room"]);
+      .filter("date", "eq", format(selectedDate, "yyyy-MM-dd"));
 
     if (error) return console.error("Error loading reservations:", error);
 
-    // Filtrer les réservations
-    const now = new Date();
-    const filteredReservations = (reservations || []).filter(res => {
-      const reservationDate = new Date(res.date);
-      
-      // Si la date de réservation est dans le futur, garder la réservation
-      if (isAfter(startOfDay(reservationDate), startOfDay(now))) {
-        return true;
-      }
-      
-      // Si c'est aujourd'hui, vérifier l'heure
-      if (isToday(reservationDate)) {
-        const [hours, minutes] = res.end_time.split(":").map(Number);
-        const endTime = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate(),
-          hours,
-          minutes
-        );
-        return isAfter(endTime, now);
-      }
-      
-      // Si la date est dans le passé, supprimer la réservation
-      return false;
-    });
-
-    // Mettre à jour les réservations filtrées
-    setReservations(filteredReservations);
+    // Mettre à jour les réservations
+    setReservations(reservations || []);
     
-    // Mettre à jour les ressources avec les réservations filtrées
+    // Mettre à jour les ressources avec les réservations
     if (resources.length) {
       const updatedResources = resources.map((resource) => ({
         ...resource,
-        reservations: filteredReservations.filter((res) => res.resource_id === resource.id)
+        reservations: (reservations || []).filter((res) => res.resource_id === resource.id)
       }));
       setResources(updatedResources);
     }
 
-    // Récupérer toutes les réservations de l'utilisateur (y compris les parkings)
+    // Récupérer toutes les réservations de l'utilisateur
     const { data: allUserReservations, error: userReservationsError } = await supabase
       .from("reservations")
       .select("*, profiles:user_id(*)")
       .eq("user_id", currentUser?.id)
-      .gte("date", format(now, "yyyy-MM-dd"));
+      .gte("date", format(selectedDate, "yyyy-MM-dd"));
 
     if (userReservationsError) {
       console.error("Error loading user reservations:", userReservationsError);
       return;
     }
 
-    // Mettre à jour mes réservations avec toutes les réservations de l'utilisateur
+    // Mettre à jour mes réservations
     setMyReservations(allUserReservations || []);
-
-    // Supprimer les réservations passées de la base de données
-    const pastReservations = (reservations || []).filter(res => {
-      const reservationDate = new Date(res.date);
-      if (isBefore(startOfDay(reservationDate), startOfDay(now))) return true;
-      if (isToday(reservationDate)) {
-        const [hours, minutes] = res.end_time.split(":").map(Number);
-        const endTime = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate(),
-          hours,
-          minutes
-        );
-        return isBefore(endTime, now);
-      }
-      return false;
-    });
-
-    // Supprimer chaque réservation passée
-    for (const reservation of pastReservations) {
-      try {
-        await supabase
-          .from("reservations")
-          .delete()
-          .eq("id", reservation.id);
-      } catch (error) {
-        console.error("Error deleting past reservation:", error);
-      }
-    }
   };
 
   const handleReservation = async (resourceId: string, date: Date, startTime: string, endTime: string) => {
@@ -221,12 +165,17 @@ const Dashboard: React.FC = () => {
         return;
       }
 
+      // Déterminer le type de ressource
+      const resourceType = resourceId.startsWith("place_") ? "slot" : 
+                         resourceId.startsWith("bureau_flex_") ? "desk" : 
+                         resourceId.startsWith("salle_reunion_") ? "room" : "desk";
+
       // Step 2: Insert the reservation
       const { error: insertError } = await supabase.from("reservations").insert([
         {
           user_id: currentUser.id,
           resource_id: resourceId,
-          type: selectedResource?.type || "desk",
+          type: resourceType,
           date: format(date, "yyyy-MM-dd"),
           start_time: startTime,
           end_time: endTime,
@@ -241,9 +190,13 @@ const Dashboard: React.FC = () => {
       toast({
         title: "Réservation confirmée",
         description: `Vous avez réservé ${
-          selectedResource?.type === "desk" ? "le bureau" : "la salle"
+          resourceType === "desk" ? "le bureau" : 
+          resourceType === "slot" ? "la place de parking" : 
+          "la salle"
         } ${resourceId.replace(
-          selectedResource?.type === "desk" ? "bureau_flex_" : "salle_reunion_",
+          resourceType === "desk" ? "bureau_flex_" : 
+          resourceType === "slot" ? "place_" : 
+          "salle_reunion_", 
           ""
         )} pour le ${format(date, "dd MMMM yyyy", { locale: fr })} de ${startTime} à ${endTime}.`,
       });
@@ -310,13 +263,6 @@ const Dashboard: React.FC = () => {
                 />
               </PopoverContent>
             </Popover>
-            <Button 
-              variant="outline" 
-              className="w-[280px]"
-              onClick={() => window.location.href = "/parking"}
-            >
-              Réserver un parking
-            </Button>
           </div>
           <Separator className="mb-2" />
 
@@ -339,6 +285,7 @@ const Dashboard: React.FC = () => {
               <span>Salle réservée</span>
             </div>
           </div>
+
           <Separator className="mb-2" />
 
           {myReservations.length > 0 && (
@@ -346,14 +293,16 @@ const Dashboard: React.FC = () => {
               <h2 className="font-semibold">Mes réservations</h2>
               <div className="flex flex-col gap-2">
                 {myReservations.map((reservation, index) => {
-                  const resourceName =
-                    reservation.type === "desk"
-                      ? `Bureau ${reservation.resource_id.replace("bureau_flex_", "")}`
-                      : reservation.type === "slot"
-                      ? `Place de parking ${reservation.resource_id.replace("place_", "")}`
-                      : reservation.resource_id === "PhoneBox"
-                      ? "PhoneBox"
-                      : `Salle ${reservation.resource_id.replace("salle_reunion_", "")}`;
+                  let resourceName = "";
+                  if (reservation.type === "desk") {
+                    resourceName = `Bureau ${reservation.resource_id.replace("bureau_flex_", "")}`;
+                  } else if (reservation.type === "slot") {
+                    resourceName = `Place de parking ${reservation.resource_id.replace("place_", "")}`;
+                  } else if (reservation.resource_id === "PhoneBox") {
+                    resourceName = "PhoneBox";
+                  } else {
+                    resourceName = `Salle ${reservation.resource_id.replace("salle_reunion_", "")}`;
+                  }
 
                   return (
                     <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
@@ -378,9 +327,76 @@ const Dashboard: React.FC = () => {
           )}
         </div>
 
-        <div className="max-h-full grow flex align-center justify-center bg-white p-6 rounded-lg shadow-md">
-          <div className="max-h-full md:grow-0 grow shadow-md">
-            <PlanSVG resources={resources} onSelect={(resource) => setSelectedResource(resource)} />
+        <div className="max-h-full grow flex flex-col bg-white p-6 rounded-lg shadow-md">
+          <Tabs defaultValue="bureaux" className="w-fit mb-1 mx-auto" onValueChange={setActiveTab}>
+            <TabsList className="flex gap-1 h-6 w-fit">
+              <TabsTrigger value="bureaux" className="text-xs py-0 px-1">Bureaux</TabsTrigger>
+              <TabsTrigger value="parking" className="text-xs py-0 px-1">Parking</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="max-h-full grow flex align-center justify-center">
+            <div className="max-h-full md:grow-0 grow shadow-md">
+              {activeTab === "bureaux" ? (
+                <PlanSVG resources={resources} onSelect={(resource) => setSelectedResource(resource)} />
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full justify-items-center items-center min-h-[calc(100vh-200px)] py-8">
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const spotId = `place_${i + 1}`;
+                    const spotReservation = reservations.find(r => 
+                      r.resource_id === spotId && 
+                      r.date === format(selectedDate, "yyyy-MM-dd")
+                    );
+                    const isMyReservation = spotReservation?.user_id === currentUser?.id;
+
+                    return (
+                      <div
+                        key={spotId}
+                        className={`p-6 rounded-lg text-center h-[220px] w-[220px] flex flex-col justify-between items-center ${
+                          spotReservation
+                            ? "bg-red-100 text-red-700"
+                            : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        <p className="font-medium text-xl mt-4">Place {i + 1}</p>
+                        {spotReservation ? (
+                          isMyReservation ? (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleCancelReservation(spotReservation)}
+                              className="mb-4"
+                            >
+                              Annuler
+                            </Button>
+                          ) : (
+                            <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
+                              <img
+                                src={spotReservation.profiles?.avatar_url || "/lio2.png"}
+                                alt="Profile"
+                                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                              />
+                              <p className="text-sm text-center break-words w-full">
+                                Réservée par {spotReservation.profiles?.display_name || "un utilisateur"}
+                              </p>
+                            </div>
+                          )
+                        ) : (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleReservation(spotId, selectedDate, "00:00", "23:59")}
+                            className="mb-4"
+                          >
+                            Réserver
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
