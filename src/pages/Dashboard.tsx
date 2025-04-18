@@ -3,7 +3,7 @@ import Header from "../components/Header";
 import ReservationModal from "../components/ReservationModal";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
-import { format, startOfDay, isBefore } from "date-fns";
+import { format, startOfDay, isBefore, isToday, isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -59,8 +59,8 @@ const Dashboard: React.FC = () => {
       data: reservations,
       error,
     }: {
-      data: Reservation[] | null; // The data will be an array of Reservation objects or null
-      error: PostgrestError | null; // The error can be a PostgrestError or null
+      data: Reservation[] | null;
+      error: PostgrestError | null;
     } = await supabase
       .from("reservations")
       .select("*, profiles:user_id(*)")
@@ -68,9 +68,78 @@ const Dashboard: React.FC = () => {
 
     if (error) return console.error("Error loading reservations:", error);
 
-    setReservations([...reservations]);
-    const myRes = reservations.filter((r) => r.user_id == currentUser.id);
+    // Filtrer les réservations
+    const now = new Date();
+    const filteredReservations = (reservations || []).filter(res => {
+      const reservationDate = new Date(res.date);
+      
+      // Si la date de réservation est dans le futur, garder la réservation
+      if (isAfter(startOfDay(reservationDate), startOfDay(now))) {
+        return true;
+      }
+      
+      // Si c'est aujourd'hui, vérifier l'heure
+      if (isToday(reservationDate)) {
+        const [hours, minutes] = res.end_time.split(":").map(Number);
+        const endTime = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          hours,
+          minutes
+        );
+        return isAfter(endTime, now);
+      }
+      
+      // Si la date est dans le passé, supprimer la réservation
+      return false;
+    });
+
+    // Mettre à jour les réservations filtrées
+    setReservations(filteredReservations);
+    
+    // Mettre à jour les ressources avec les réservations filtrées
+    if (resources.length) {
+      const updatedResources = resources.map((resource) => ({
+        ...resource,
+        reservations: filteredReservations.filter((res) => res.resource_id === resource.id)
+      }));
+      setResources(updatedResources);
+    }
+
+    // Mettre à jour mes réservations avec les réservations filtrées
+    const myRes = filteredReservations.filter((r) => r.user_id === currentUser?.id);
     setMyReservations(myRes);
+
+    // Supprimer les réservations passées de la base de données
+    const pastReservations = (reservations || []).filter(res => {
+      const reservationDate = new Date(res.date);
+      if (isBefore(startOfDay(reservationDate), startOfDay(now))) return true;
+      if (isToday(reservationDate)) {
+        const [hours, minutes] = res.end_time.split(":").map(Number);
+        const endTime = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          hours,
+          minutes
+        );
+        return isBefore(endTime, now);
+      }
+      return false;
+    });
+
+    // Supprimer chaque réservation passée
+    for (const reservation of pastReservations) {
+      try {
+        await supabase
+          .from("reservations")
+          .delete()
+          .eq("id", reservation.id);
+      } catch (error) {
+        console.error("Error deleting past reservation:", error);
+      }
+    }
   };
 
   const handleReservation = async (resourceId: string, date: Date, startTime: string, endTime: string) => {
@@ -81,6 +150,41 @@ const Dashboard: React.FC = () => {
         variant: "destructive",
       });
       return;
+    }
+
+    // Vérifier si l'heure de réservation est valide
+    const now = new Date();
+    const reservationDate = new Date(date);
+    
+    // Si la date est dans le passé
+    if (isBefore(startOfDay(reservationDate), startOfDay(now))) {
+      toast({
+        title: "Réservation impossible",
+        description: "Vous ne pouvez pas réserver pour une date passée.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Si c'est aujourd'hui, vérifier l'heure
+    if (isToday(reservationDate)) {
+      const [startHours, startMinutes] = startTime.split(":").map(Number);
+      const startReservationTime = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        startHours,
+        startMinutes
+      );
+
+      if (isBefore(startReservationTime, now)) {
+        toast({
+          title: "Réservation impossible",
+          description: "Vous ne pouvez pas réserver pour une heure déjà passée.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     try {
