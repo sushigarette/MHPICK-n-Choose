@@ -246,7 +246,7 @@ const Dashboard: React.FC = () => {
                   )}
                 >
                   <CalendarIcon />
-                  {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                  {selectedDate ? format(selectedDate, "PPP", { locale: fr }) : <span>Choisir une date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -260,6 +260,7 @@ const Dashboard: React.FC = () => {
                   }}
                   className="rounded-md border"
                   disabled={(date) => isBefore(startOfDay(date), startOfDay(new Date()))}
+                  locale={fr}
                 />
               </PopoverContent>
             </Popover>
