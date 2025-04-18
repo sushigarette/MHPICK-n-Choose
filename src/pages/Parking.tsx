@@ -211,7 +211,7 @@ const Parking: React.FC = () => {
               return (
                 <div
                   key={spot.id}
-                  className={`p-6 rounded-lg text-center min-h-[180px] flex flex-col justify-between ${
+                  className={`p-6 rounded-lg text-center min-h-[180px] flex flex-col justify-center items-center ${
                     isReserved
                       ? "bg-red-100 text-red-700"
                       : "bg-green-100 text-green-700"
@@ -229,13 +229,15 @@ const Parking: React.FC = () => {
                         Annuler
                       </Button>
                     ) : (
-                      <div className="mt-4 flex items-center justify-center gap-2">
+                      <div className="mt-4 flex flex-col items-center justify-center gap-2 w-full">
                         <img
                           src={reservation.profiles?.avatar_url || "/lio2.png"}
                           alt="Profile"
-                          className="w-8 h-8 rounded-full object-cover"
+                          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                         />
-                        <p className="text-sm">Réservée par {reservation.profiles?.display_name || "un utilisateur"}</p>
+                        <p className="text-sm text-center break-words w-full">
+                          Réservée par {reservation.profiles?.display_name || "un utilisateur"}
+                        </p>
                       </div>
                     )
                   ) : (
