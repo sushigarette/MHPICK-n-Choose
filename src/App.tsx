@@ -12,13 +12,25 @@ import NotFound from "./pages/NotFound";
 import { Toaster } from "@/components/ui/toaster";
 import Profile from "./pages/Profile";
 import Parking from "./pages/Parking";
+import Loading from "./components/Loading";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
 const PrivateRoute = ({ element }) => {
   const { isAuthenticated, isLoading } = useAuth();
+  const [showLoading, setShowLoading] = useState(true);
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        setShowLoading(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
+  if (isLoading || showLoading) return <Loading />;
   return isAuthenticated ? element : <Navigate to="/login" />;
 };
 
