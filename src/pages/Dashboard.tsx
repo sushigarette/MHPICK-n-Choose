@@ -42,12 +42,14 @@ const Dashboard: React.FC = () => {
         return { ...resource, reservations: res };
       });
       setResources(updatedResources);
-      console.log(updatedResources);
     }
   }, [reservations]);
 
   const fetchResources = async (): Promise<void> => {
-    const { data: resources, error } = await supabase.from("resources").select("*");
+    const { data: resources, error } = await supabase
+      .from("resources")
+      .select("*")
+      .in("type", ["desk", "room"]);
     if (error) throw error;
     setResources(resources);
     if (selectedDate) fetchReservations();
@@ -64,7 +66,8 @@ const Dashboard: React.FC = () => {
     } = await supabase
       .from("reservations")
       .select("*, profiles:user_id(*)")
-      .filter("date", "eq", format(selectedDate, "yyyy-MM-dd"));
+      .filter("date", "eq", format(selectedDate, "yyyy-MM-dd"))
+      .in("type", ["desk", "room"]);
 
     if (error) return console.error("Error loading reservations:", error);
 

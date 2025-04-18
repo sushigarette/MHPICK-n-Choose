@@ -11,6 +11,11 @@ interface PlanSVGProps {
 }
 
 const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect }) => {
+  // Filtrer les ressources pour n'afficher que les bureaux et les salles
+  const filteredResources = resources.filter(resource => 
+    resource.type === "desk" || resource.type === "room"
+  );
+
   const getClassName = (reservations: any[], type: string) => {
     if (reservations?.length) {
       return "fill-red-500"; // Reserved
@@ -47,7 +52,7 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect }) => {
           maxHeight: '90vh'
         }}
       >
-        {resources.map((resource) => (
+        {filteredResources.map((resource) => (
           <Tooltip key={resource.id}>
             <TooltipTrigger asChild>
               <motion.ellipse
