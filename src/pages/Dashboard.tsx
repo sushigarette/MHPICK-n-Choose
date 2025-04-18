@@ -152,7 +152,7 @@ const Dashboard: React.FC = () => {
       return;
     }
 
-    // Vérifier si l'heure de réservation est valide
+    // Vérifier si l'heure de fin est valide
     const now = new Date();
     const reservationDate = new Date(date);
     
@@ -166,21 +166,21 @@ const Dashboard: React.FC = () => {
       return;
     }
 
-    // Si c'est aujourd'hui, vérifier l'heure
+    // Si c'est aujourd'hui, vérifier l'heure de fin
     if (isToday(reservationDate)) {
-      const [startHours, startMinutes] = startTime.split(":").map(Number);
-      const startReservationTime = new Date(
+      const [endHours, endMinutes] = endTime.split(":").map(Number);
+      const endReservationTime = new Date(
         now.getFullYear(),
         now.getMonth(),
         now.getDate(),
-        startHours,
-        startMinutes
+        endHours,
+        endMinutes
       );
 
-      if (isBefore(startReservationTime, now)) {
+      if (isBefore(endReservationTime, now)) {
         toast({
           title: "Réservation impossible",
-          description: "Vous ne pouvez pas réserver pour une heure déjà passée.",
+          description: "L'heure de fin de la réservation est déjà passée.",
           variant: "destructive",
         });
         return;
