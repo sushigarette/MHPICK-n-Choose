@@ -110,9 +110,20 @@ const Dashboard: React.FC = () => {
       setResources(updatedResources);
     }
 
-    // Mettre à jour mes réservations avec les réservations filtrées
-    const myRes = filteredReservations.filter((r) => r.user_id === currentUser?.id);
-    setMyReservations(myRes);
+    // Récupérer toutes les réservations de l'utilisateur (y compris les parkings)
+    const { data: allUserReservations, error: userReservationsError } = await supabase
+      .from("reservations")
+      .select("*, profiles:user_id(*)")
+      .eq("user_id", currentUser?.id)
+      .gte("date", format(now, "yyyy-MM-dd"));
+
+    if (userReservationsError) {
+      console.error("Error loading user reservations:", userReservationsError);
+      return;
+    }
+
+    // Mettre à jour mes réservations avec toutes les réservations de l'utilisateur
+    setMyReservations(allUserReservations || []);
 
     // Supprimer les réservations passées de la base de données
     const pastReservations = (reservations || []).filter(res => {
