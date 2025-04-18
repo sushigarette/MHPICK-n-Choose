@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Resource } from "@/interfaces";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface ReservationModalProps {
   isOpen: boolean;
@@ -52,13 +54,23 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ isOpen, onClose, re
           <DialogHeader>
             <DialogTitle>Réservation existante</DialogTitle>
           </DialogHeader>
-          <div className="flex gap-4 items-center flex-col md:flex-row justify-center md:justify-start">
-            <img
-              src={resource.reservations[0].profiles.avatar_url || "/lio2.png"}
-              alt="Profile"
-              className="min-w-16 min-h-16 w-16 h-16 rounded-full object-cover"
-            />
-            <p>Cette ressource est déjà réservée par {resource.reservations[0].profiles.display_name}</p>
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-4 items-center">
+              <img
+                src={resource.reservations[0].profiles.avatar_url || "/lio2.png"}
+                alt="Profile"
+                className="min-w-16 min-h-16 w-16 h-16 rounded-full object-cover"
+              />
+              <div>
+                <p className="font-medium">Réservé par {resource.reservations[0].profiles.display_name}</p>
+                <p className="text-sm text-gray-600">
+                  {format(new Date(resource.reservations[0].date), "dd MMMM yyyy", { locale: fr })}
+                </p>
+                <p className="text-sm text-gray-600">
+                  De {resource.reservations[0].start_time} à {resource.reservations[0].end_time}
+                </p>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={onClose}>
