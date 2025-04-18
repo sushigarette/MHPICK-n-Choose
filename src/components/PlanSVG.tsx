@@ -54,10 +54,10 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect }) => {
                 id={resource.id}
                 cx={resource.cx}
                 cy={resource.cy}
-                rx="8"
-                ry="8"
+                rx="12"
+                ry="12"
                 className={`cursor-pointer ${getClassName(resource.reservations, resource.type)}`}
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onSelect(resource)}
               />
