@@ -24,7 +24,7 @@ src/
 ├── utils/         # Utilitaires
 ├── config/        # Configuration
 └── routes/        # Définition des routes
-```
+```ee
 
 ## 3. Modèles de données
 
