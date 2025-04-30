@@ -361,27 +361,25 @@ const Dashboard: React.FC = () => {
                       >
                         <p className="font-medium text-xl mt-4">Place {i + 1}</p>
                         {spotReservation ? (
-                          isMyReservation ? (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleCancelReservation(spotReservation)}
-                              className="mb-4"
-                            >
-                              Annuler
-                            </Button>
-                          ) : (
-                            <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
-                              <img
-                                src={spotReservation.profiles?.avatar_url || "/lio2.png"}
-                                alt="Profile"
-                                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                              />
-                              <p className="text-sm text-center break-words w-full">
-                                Réservée par {spotReservation.profiles?.display_name || "un utilisateur"}
-                              </p>
-                            </div>
-                          )
+                          <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
+                            <img
+                              src={spotReservation.profiles?.avatar_url || "/lio2.png"}
+                              alt="Profile"
+                              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                            />
+                            <p className="text-sm text-center break-words w-full">
+                              {isMyReservation ? "Réservée par vous" : `Réservée par ${spotReservation.profiles?.display_name || "un utilisateur"}`}
+                            </p>
+                            {isMyReservation && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleCancelReservation(spotReservation)}
+                              >
+                                Annuler
+                              </Button>
+                            )}
+                          </div>
                         ) : (
                           <Button
                             variant="default"

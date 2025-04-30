@@ -23,14 +23,16 @@ const Reservations: React.FC = () => {
       data: reservations,
       error,
     }: {
-      data: Reservation[] | null; // The data will be an array of Reservation objects or null
-      error: PostgrestError | null; // The error can be a PostgrestError or null
-    } = await supabase.from("reservations").select("*").eq("user_id", currentUser.id);
+      data: Reservation[] | null;
+      error: PostgrestError | null;
+    } = await supabase
+      .from("reservations")
+      .select("*, profiles:user_id(*)")
+      .eq("user_id", currentUser.id);
 
     if (error) return console.error("Error loading reservations:", error);
 
-    // Update MyReservations state
-    setMyReservations(reservations);
+    setMyReservations(reservations || []);
   };
 
   const handleCancelReservation = async (reservation: Reservation) => {
@@ -98,9 +100,16 @@ const Reservations: React.FC = () => {
                             Réservé pour le {reservationDate.toLocaleDateString("fr-FR")}
                           </p>
                         </div>
-                        <Button variant="destructive" onClick={() => handleCancelReservation(reservation)}>
-                          Annuler
-                        </Button>
+                        <div className="flex flex-col items-center gap-2">
+                          <img
+                            src={reservation.profiles?.avatar_url || "/lio2.png"}
+                            alt="Profile"
+                            className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                          />
+                          <Button variant="destructive" onClick={() => handleCancelReservation(reservation)}>
+                            Annuler
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );
