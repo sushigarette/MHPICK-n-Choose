@@ -63,9 +63,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full h-fit max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg"
+      className="w-full h-fit max-w-md mx-auto p-6 bg-card rounded-lg shadow-lg"
     >
-      <h2 className="text-2xl font-bold text-center mb-6">{type === "login" ? "Connexion" : "Créer un compte"}</h2>
+      <h2 className="text-2xl font-bold text-center mb-6 text-foreground">{type === "login" ? "Connexion" : "Créer un compte"}</h2>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -74,7 +74,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel className="text-foreground">Email</FormLabel>
                 <FormControl>
                   <Input placeholder="votre@email.com" {...field} />
                 </FormControl>
@@ -88,7 +88,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Mot de passe</FormLabel>
+                <FormLabel className="text-foreground">Mot de passe</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="••••••" {...field} />
                 </FormControl>
@@ -109,14 +109,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
 
           <div className="text-center mt-4">
             {type === "login" ? (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Vous n'avez pas de compte?{" "}
                 <Button variant="link" className="p-0" onClick={() => navigate("/register")}>
                   S'inscrire
                 </Button>
               </p>
             ) : (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Vous avez déjà un compte?{" "}
                 <Button variant="link" className="p-0" onClick={() => navigate("/login")}>
                   Se connecter
