@@ -230,10 +230,10 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col grow gap-2 bg-gray-50">
+    <div className="h-full flex flex-col grow gap-2 bg-background">
       <Header />
       <div className="flex flex-col md:flex-row grow gap-2">
-        <div className="flex gap-4 flex-col bg-white p-6 rounded-lg shadow-md md:max-w-md w-full">
+        <div className="flex gap-4 flex-col bg-card p-6 rounded-lg shadow-md md:max-w-md w-full">
           <h2 className="font-semibold">Visualisation pour le</h2>
           <div className="flex flex-col gap-4">
             <Popover>
@@ -306,17 +306,17 @@ const Dashboard: React.FC = () => {
                   }
 
                   return (
-                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
+                    <div key={index} className="flex justify-between items-center p-3 bg-muted rounded-md">
                       <div>
                         <p className="font-medium">{resourceName}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           {format(new Date(reservation.date), "dd MMMM yyyy", { locale: fr })} de{" "}
                           {reservation.start_time} à {reservation.end_time}
                         </p>
                       </div>
                       <button
                         onClick={() => handleCancelReservation(reservation)}
-                        className="bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600 transition-colors"
+                        className="bg-destructive text-destructive-foreground px-3 py-1 rounded-md text-sm hover:bg-destructive/90 transition-colors"
                       >
                         Annuler
                       </button>
@@ -328,7 +328,7 @@ const Dashboard: React.FC = () => {
           )}
         </div>
 
-        <div className="max-h-full grow flex flex-col bg-white p-6 rounded-lg shadow-md">
+        <div className="max-h-full grow flex flex-col bg-card p-6 rounded-lg shadow-md">
           <Tabs defaultValue="bureaux" className="w-fit mb-1 mx-auto" onValueChange={setActiveTab}>
             <TabsList className="flex gap-1 h-6 w-fit">
               <TabsTrigger value="bureaux" className="text-xs py-0 px-1">Bureaux</TabsTrigger>
@@ -355,8 +355,8 @@ const Dashboard: React.FC = () => {
                         key={spotId}
                         className={`p-6 rounded-lg text-center h-[220px] w-[220px] flex flex-col justify-between items-center ${
                           spotReservation
-                            ? "bg-red-100 text-red-700"
-                            : "bg-green-100 text-green-700"
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-green-500/10 text-green-500"
                         }`}
                       >
                         <p className="font-medium text-xl mt-4">Place {i + 1}</p>

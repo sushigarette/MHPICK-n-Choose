@@ -55,7 +55,7 @@ const Reservations: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex grow flex-col bg-gray-50">
+    <div className="min-h-screen flex grow flex-col bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8 flex-1">
         <motion.div
@@ -67,15 +67,15 @@ const Reservations: React.FC = () => {
           <h1 className="text-3xl font-bold mb-6 text-center">Mes réservations</h1>
 
           {myReservations.length === 0 ? (
-            <div className="bg-white p-8 rounded-lg shadow-md text-center">
-              <p className="text-gray-600 mb-4">Vous n'avez pas encore de réservations.</p>
+            <div className="bg-card p-8 rounded-lg shadow-md text-center">
+              <p className="text-muted-foreground mb-4">Vous n'avez pas encore de réservations.</p>
               <Button onClick={() => (window.location.href = "/dashboard")}>Réserver un espace</Button>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="bg-card rounded-lg shadow-md overflow-hidden">
               <div className="p-6 border-b">
                 <h2 className="text-xl font-semibold">Réservations en cours</h2>
-                <p className="text-sm text-gray-600">Gérez vos réservations de bureaux et salles de réunion</p>
+                <p className="text-sm text-muted-foreground">Gérez vos réservations de bureaux et salles de réunion</p>
               </div>
 
               <div className="divide-y">

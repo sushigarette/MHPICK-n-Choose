@@ -15,7 +15,7 @@ const Index: React.FC = () => {
   }, [isAuthenticated, navigate]);
 
   return (
-    <div className="min-h-screen grow flex flex-col bg-gray-50">
+    <div className="min-h-screen grow flex flex-col bg-background">
       <Header />
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         <motion.div
@@ -27,7 +27,7 @@ const Index: React.FC = () => {
           <h1 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text">
             C'est parti pour une réservation !
           </h1>
-          <p className="text-xl text-gray-600 mb-8">Bureaux, salles de réunion, places de parking</p>
+          <p className="text-xl text-muted-foreground mb-8">Bureaux, salles de réunion, places de parking</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" onClick={() => navigate("/register")} className="text-lg py-6">
               Besoin d'un compte ?

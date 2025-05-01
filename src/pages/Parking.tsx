@@ -124,10 +124,10 @@ const Parking: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <div className="flex flex-col md:flex-row grow gap-4 p-4">
-        <div className="flex gap-4 flex-col bg-white p-6 rounded-lg shadow-md md:max-w-md w-full">
+        <div className="flex gap-4 flex-col bg-card p-6 rounded-lg shadow-md md:max-w-md w-full">
           <div className="flex justify-between items-center">
             <h2 className="font-semibold">Sélectionnez une date</h2>
             <Button
@@ -176,11 +176,11 @@ const Parking: React.FC = () => {
                 {myReservations.map((reservation) => (
                   <div
                     key={reservation.id}
-                    className="flex justify-between items-center p-3 bg-gray-50 rounded-md"
+                    className="flex justify-between items-center p-3 bg-muted rounded-md"
                   >
                     <div>
                       <p className="font-medium">Place {reservation.resource_id.replace("place_", "")}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {format(new Date(reservation.date), "dd MMMM yyyy", { locale: fr })}
                       </p>
                     </div>
@@ -198,7 +198,7 @@ const Parking: React.FC = () => {
           )}
         </div>
 
-        <div className="grow bg-white p-6 rounded-lg shadow-md">
+        <div className="grow bg-card p-6 rounded-lg shadow-md">
           <h2 className="font-semibold mb-4">
             Places disponibles ({parkingSpots.filter(spot => !spot.reservations?.length).length}/{parkingSpots.length})
           </h2>
@@ -213,8 +213,8 @@ const Parking: React.FC = () => {
                   key={spot.id}
                   className={`p-6 rounded-lg text-center min-h-[180px] flex flex-col justify-center items-center ${
                     isReserved
-                      ? "bg-red-100 text-red-700"
-                      : "bg-green-100 text-green-700"
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-green-500/10 text-green-500"
                   }`}
                 >
                   <p className="font-medium text-xl">Place {spot.id.replace("place_", "")}</p>

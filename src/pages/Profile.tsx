@@ -35,9 +35,9 @@ const Profile = () => {
   };
 
   return (
-    <div className="h-full flex flex-col grow gap-2 bg-gray-50">
+    <div className="h-full flex flex-col grow gap-2 bg-background">
       <Header />
-      <div className="flex grow bg-white p-6 rounded-lg shadow-md w-full items-center justify-center">
+      <div className="flex grow bg-card p-6 rounded-lg shadow-md w-full items-center justify-center">
         <div className="flex flex-col gap-4 items-start">
           {!oldDisplayName ? (
             <>Chargement...</>
@@ -47,7 +47,7 @@ const Profile = () => {
                 <img src={avatarUrl || "/lio2.png"} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
                 <div>
                   <h1 className="text-2xl font-bold">Profil</h1>
-                  <h2>{currentUser?.email}</h2>
+                  <h2 className="text-muted-foreground">{currentUser?.email}</h2>
                 </div>
               </div>
               <div className="flex flex-col gap-2 w-full">
@@ -58,7 +58,7 @@ const Profile = () => {
                   value={displayName ?? ""}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Nom affiché"
-                  className="p-2 border rounded w-full"
+                  className="p-2 border rounded w-full bg-background"
                 />
               </div>
               <div className="flex flex-col gap-2 w-full">
@@ -69,10 +69,10 @@ const Profile = () => {
                   value={avatarUrl ?? ""}
                   onChange={(e) => setAvatarUrl(e.target.value)}
                   placeholder="URL Avatar"
-                  className="p-2 border rounded w-full"
+                  className="p-2 border rounded w-full bg-background"
                 />
-                <small>
-                  Tu peux upload sur <a href="https://imgur.com/upload">Imgur</a>
+                <small className="text-muted-foreground">
+                  Tu peux upload sur <a href="https://imgur.com/upload" className="text-primary hover:underline">Imgur</a>
                 </small>
               </div>
 

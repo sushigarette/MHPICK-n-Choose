@@ -22,7 +22,7 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gray-100">
+    <div className="fixed inset-0 flex items-center justify-center bg-background">
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
         <motion.div 
           initial={{ opacity: 0 }}
@@ -34,7 +34,7 @@ const NotFound = () => {
             {animationData && <Lottie animationData={animationData} loop={true} />}
           </div>
           <motion.p 
-            className="text-2xl text-gray-600 mb-8 text-center"
+            className="text-2xl text-muted-foreground mb-8 text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}

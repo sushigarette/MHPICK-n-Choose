@@ -4,7 +4,7 @@ import Header from "../components/Header";
 
 const Login: React.FC = () => {
   return (
-    <div className="min-h-screen grow flex flex-col bg-gray-50">
+    <div className="min-h-screen grow flex flex-col bg-background">
       <Header />
       <div className="flex grow items-center">
         <AuthForm type="login" />
