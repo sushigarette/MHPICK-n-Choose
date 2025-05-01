@@ -15,6 +15,8 @@ import Profile from "./pages/Profile";
 import Parking from "./pages/Parking";
 import Loading from "./components/Loading";
 import { useEffect, useState } from "react";
+import supabase from "./supabase";
+import AdminPanel from "./components/AdminPanel";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,34 @@ const PrivateRoute = ({ element }) => {
   return isAuthenticated ? element : <Navigate to="/login" />;
 };
 
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { currentUser } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', currentUser.id)
+          .single();
+        
+        setIsAdmin(profile?.is_admin || false);
+      }
+      setIsLoading(false);
+    };
+    checkAdminStatus();
+  }, [currentUser]);
+
+  if (isLoading) {
+    return <div>Chargement...</div>;
+  }
+
+  return isAdmin ? <>{children}</> : <Navigate to="/dashboard" />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -50,6 +80,7 @@ const App = () => (
               <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
               <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />
               <Route path="/parking" element={<PrivateRoute element={<Parking />} />} />
+              <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

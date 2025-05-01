@@ -1,39 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion } from "framer-motion";
-import { Resource, Reservation } from "@/interfaces";
+import { Resource } from "@/interfaces";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useAuth } from "@/context/AuthContext";
-import supabase from "@/supabase";
 
 interface PlanSVGProps {
   resources: Resource[];
   onSelect: (resource: Resource) => void;
-  onCancelReservation: (reservation: Reservation) => Promise<void>;
-  isAdmin: boolean;
 }
 
-const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect, onCancelReservation, isAdmin }) => {
-  const { currentUser } = useAuth();
-  const [isAdminStatus, setIsAdminStatus] = useState(false);
-
-  // Vérifier si l'utilisateur est admin
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (currentUser) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', currentUser.id)
-          .single();
-        
-        setIsAdminStatus(profile?.is_admin || false);
-      }
-    };
-    checkAdminStatus();
-  }, [currentUser]);
-
+const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect }) => {
   // Filtrer les ressources pour n'afficher que les bureaux et les salles
   const filteredResources = resources.filter(resource => 
     resource.type === "desk" || resource.type === "room"
@@ -52,21 +29,6 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect, onCancelReservat
         return "fill-yellow-500";
       default:
         return "fill-yellow-300";
-    }
-  };
-
-  const handleCancelReservation = async (reservation: any) => {
-    try {
-      const { error } = await supabase
-        .from("reservations")
-        .delete()
-        .eq("id", reservation.id);
-
-      if (error) throw error;
-      // Rafraîchir les ressources après l'annulation
-      window.location.reload();
-    } catch (error) {
-      console.error("Error during cancellation:", error);
     }
   };
 
@@ -105,35 +67,19 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect, onCancelReservat
                 onClick={() => onSelect(resource)}
               />
             </TooltipTrigger>
-            <TooltipContent>
-              {resource.reservations && resource.reservations.length > 0 ? (
-                <div className="text-center">
-                  <img
-                    src={resource.reservations[0].profiles?.avatar_url || "/lio2.png"}
-                    alt="Profile"
-                    className="w-8 h-8 rounded-full object-cover mx-auto mb-1"
-                  />
-                  <p className="text-xs">
-                    {resource.reservations[0].user_id === currentUser?.id
-                      ? "Réservé par vous"
-                      : `Réservé par ${resource.reservations[0].profiles?.display_name || "un utilisateur"}`}
+            {resource.reservations?.length > 0 && (
+              <TooltipContent>
+                <div className="flex flex-col gap-1">
+                  <p className="font-medium">{resource.reservations[0].profiles.display_name}</p>
+                  <p className="text-sm">
+                    {format(new Date(resource.reservations[0].date), "dd MMMM yyyy", { locale: fr })}
                   </p>
-                  {(resource.reservations[0].user_id === currentUser?.id || isAdmin) && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCancelReservation(resource.reservations[0]);
-                      }}
-                      className="text-xs text-red-500 hover:text-red-700 mt-1"
-                    >
-                      {isAdmin && resource.reservations[0].user_id !== currentUser?.id ? "Annuler (Admin)" : "Annuler"}
-                    </button>
-                  )}
+                  <p className="text-sm">
+                    De {resource.reservations[0].start_time} à {resource.reservations[0].end_time}
+                  </p>
                 </div>
-              ) : (
-                <p className="text-xs">Cliquez pour réserver</p>
-              )}
-            </TooltipContent>
+              </TooltipContent>
+            )}
           </Tooltip>
         ))}
       </svg>

@@ -390,12 +390,7 @@ const Dashboard: React.FC = () => {
           <div className="max-h-full grow flex align-center justify-center">
             <div className="max-h-full md:grow-0 grow shadow-md">
               {activeTab === "bureaux" ? (
-                <PlanSVG 
-                  resources={resources} 
-                  onSelect={(resource) => setSelectedResource(resource)}
-                  onCancelReservation={handleCancelReservation}
-                  isAdmin={isAdmin}
-                />
+                <PlanSVG resources={resources} onSelect={(resource) => setSelectedResource(resource)} />
               ) : activeTab === "parking" ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full justify-items-center items-center min-h-[calc(100vh-200px)] py-8">
                   {Array.from({ length: 12 }, (_, i) => {
@@ -517,6 +512,7 @@ const Dashboard: React.FC = () => {
           resource={selectedResource}
           selectedDate={selectedDate}
           onConfirm={handleReservation}
+          onCancelReservation={handleCancelReservation}
         />
       )}
     </div>

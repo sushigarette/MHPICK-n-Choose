@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,17 +22,24 @@ interface ReservationModalProps {
   resource: Resource;
   selectedDate: Date;
   onConfirm: (resourceId: string, date: Date, startTime: string, endTime: string) => void;
+  onCancelReservation?: (reservation: any) => Promise<void>;
 }
 
-const ReservationModal: React.FC<ReservationModalProps> = ({ isOpen, onClose, resource, selectedDate, onConfirm }) => {
+const ReservationModal: React.FC<ReservationModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  resource, 
+  selectedDate, 
+  onConfirm,
+  onCancelReservation 
+}) => {
   const [startTime, setStartTime] = useState<string>("09:00");
   const [endTime, setEndTime] = useState<string>("17:00");
   const { toast } = useToast();
   const { currentUser } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Vérifier si l'utilisateur est admin
-  React.useEffect(() => {
+  useEffect(() => {
     const checkAdminStatus = async () => {
       if (currentUser) {
         const { data: profile } = await supabase
@@ -46,21 +53,6 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ isOpen, onClose, re
     };
     checkAdminStatus();
   }, [currentUser]);
-
-  const handleCancelReservation = async (reservation: any) => {
-    try {
-      const { error } = await supabase
-        .from("reservations")
-        .delete()
-        .eq("id", reservation.id);
-
-      if (error) throw error;
-      onClose();
-      window.location.reload();
-    } catch (error) {
-      console.error("Error during cancellation:", error);
-    }
-  };
 
   const timeSlots = Array.from({ length: 13 }, (_, i) => {
     const hour = i + 8; // Commence à 8h
@@ -98,20 +90,20 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ isOpen, onClose, re
               />
               <div>
                 <p className="font-medium">Réservé par {resource.reservations[0].profiles?.display_name}</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {format(new Date(resource.reservations[0].date), "dd MMMM yyyy", { locale: fr })}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   De {resource.reservations[0].start_time} à {resource.reservations[0].end_time}
                 </p>
               </div>
             </div>
           </div>
           <DialogFooter>
-            {(resource.reservations[0].user_id === currentUser?.id || isAdmin) && (
+            {(resource.reservations[0].user_id === currentUser?.id || isAdmin) && onCancelReservation && (
               <Button
                 variant="destructive"
-                onClick={() => handleCancelReservation(resource.reservations[0])}
+                onClick={() => onCancelReservation(resource.reservations[0])}
               >
                 {isAdmin && resource.reservations[0].user_id !== currentUser?.id ? "Annuler (Admin)" : "Annuler"}
               </Button>

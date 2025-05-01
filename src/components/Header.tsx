@@ -15,12 +15,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../context/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
 import supabase from "@/supabase";
+import { Settings, LogOut, LayoutDashboard, User, Calendar } from "lucide-react";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated, logout, displayName, avatarUrl } = useAuth();
+  const { isAuthenticated, logout, displayName, avatarUrl, currentUser } = useAuth();
   const [userEmail, setUserEmail] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
 
@@ -39,6 +41,21 @@ const Header: React.FC = () => {
     const interval = setInterval(fetchOnlineUsers, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', currentUser.id)
+          .single();
+        
+        setIsAdmin(profile?.is_admin || false);
+      }
+    };
+    checkAdminStatus();
+  }, [currentUser]);
 
   const handleLogout = () => {
     logout();
@@ -87,27 +104,49 @@ const Header: React.FC = () => {
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost">
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={avatarUrl || "/lio.png"} alt="User" />
-                      <AvatarFallback>{userEmail.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      <AvatarImage src={currentUser?.user_metadata?.avatar_url || "/lio2.png"} alt={currentUser?.email || ""} />
+                      <AvatarFallback>{currentUser?.email?.[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <p>{displayName}</p>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">Utilisateur</p>
-                      <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
+                      <p className="text-sm font-medium leading-none">{currentUser?.email}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {currentUser?.user_metadata?.full_name}
+                      </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>Tableau de bord</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>Mon profil</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/reservations")}>Mes réservations</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Tableau de bord</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Mon profil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/reservations")}>
+                    <Calendar className="mr-2 h-4 w-4" />
+                    <span>Mes réservations</span>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate("/admin")}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Administration</span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>Déconnexion</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Déconnexion</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </motion.div>
