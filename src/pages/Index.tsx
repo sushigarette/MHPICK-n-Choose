@@ -14,6 +14,14 @@ const Index: React.FC = () => {
     if (isAuthenticated) navigate("/dashboard");
   }, [isAuthenticated, navigate]);
 
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js');
+      });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen grow flex flex-col bg-background">
       <Header />
