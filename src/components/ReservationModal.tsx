@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Resource } from "@/interfaces";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useAuth } from "@/context/AuthContext";
+import supabase from "@/supabase";
 
 interface ReservationModalProps {
   isOpen: boolean;
@@ -26,6 +28,39 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ isOpen, onClose, re
   const [startTime, setStartTime] = useState<string>("09:00");
   const [endTime, setEndTime] = useState<string>("17:00");
   const { toast } = useToast();
+  const { currentUser } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Vérifier si l'utilisateur est admin
+  React.useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', currentUser.id)
+          .single();
+        
+        setIsAdmin(profile?.is_admin || false);
+      }
+    };
+    checkAdminStatus();
+  }, [currentUser]);
+
+  const handleCancelReservation = async (reservation: any) => {
+    try {
+      const { error } = await supabase
+        .from("reservations")
+        .delete()
+        .eq("id", reservation.id);
+
+      if (error) throw error;
+      onClose();
+      window.location.reload();
+    } catch (error) {
+      console.error("Error during cancellation:", error);
+    }
+  };
 
   const timeSlots = Array.from({ length: 13 }, (_, i) => {
     const hour = i + 8; // Commence à 8h
@@ -57,12 +92,12 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ isOpen, onClose, re
           <div className="flex flex-col gap-4">
             <div className="flex gap-4 items-center">
               <img
-                src={resource.reservations[0].profiles.avatar_url || "/lio2.png"}
+                src={resource.reservations[0].profiles?.avatar_url || "/lio2.png"}
                 alt="Profile"
                 className="min-w-16 min-h-16 w-16 h-16 rounded-full object-cover"
               />
               <div>
-                <p className="font-medium">Réservé par {resource.reservations[0].profiles.display_name}</p>
+                <p className="font-medium">Réservé par {resource.reservations[0].profiles?.display_name}</p>
                 <p className="text-sm text-gray-600">
                   {format(new Date(resource.reservations[0].date), "dd MMMM yyyy", { locale: fr })}
                 </p>
@@ -73,6 +108,14 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ isOpen, onClose, re
             </div>
           </div>
           <DialogFooter>
+            {(resource.reservations[0].user_id === currentUser?.id || isAdmin) && (
+              <Button
+                variant="destructive"
+                onClick={() => handleCancelReservation(resource.reservations[0])}
+              >
+                {isAdmin && resource.reservations[0].user_id !== currentUser?.id ? "Annuler (Admin)" : "Annuler"}
+              </Button>
+            )}
             <Button variant="outline" onClick={onClose}>
               Fermer
             </Button>

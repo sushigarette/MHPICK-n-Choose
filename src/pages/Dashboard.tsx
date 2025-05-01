@@ -26,6 +26,23 @@ const Dashboard: React.FC = () => {
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [activeTab, setActiveTab] = useState<string>("bureaux");
   const { currentUser } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Vérifier si l'utilisateur est admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', currentUser.id)
+          .single();
+        
+        setIsAdmin(profile?.is_admin || false);
+      }
+    };
+    checkAdminStatus();
+  }, [currentUser]);
 
   // Only fetch resources once
   useEffect(() => {
@@ -373,7 +390,12 @@ const Dashboard: React.FC = () => {
           <div className="max-h-full grow flex align-center justify-center">
             <div className="max-h-full md:grow-0 grow shadow-md">
               {activeTab === "bureaux" ? (
-                <PlanSVG resources={resources} onSelect={(resource) => setSelectedResource(resource)} />
+                <PlanSVG 
+                  resources={resources} 
+                  onSelect={(resource) => setSelectedResource(resource)}
+                  onCancelReservation={handleCancelReservation}
+                  isAdmin={isAdmin}
+                />
               ) : activeTab === "parking" ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full justify-items-center items-center min-h-[calc(100vh-200px)] py-8">
                   {Array.from({ length: 12 }, (_, i) => {
@@ -404,13 +426,13 @@ const Dashboard: React.FC = () => {
                             <p className="text-sm text-center break-words w-full">
                               {isMyReservation ? "Réservée par vous" : `Réservée par ${spotReservation.profiles?.display_name || "un utilisateur"}`}
                             </p>
-                            {isMyReservation && (
+                            {(isMyReservation || isAdmin) && (
                               <Button
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => handleCancelReservation(spotReservation)}
                               >
-                                Annuler
+                                {isAdmin && !isMyReservation ? "Annuler (Admin)" : "Annuler"}
                               </Button>
                             )}
                           </div>
@@ -458,13 +480,13 @@ const Dashboard: React.FC = () => {
                             <p className="text-sm text-center break-words w-full">
                               {isMyReservation ? "Réservée par vous" : `Réservée par ${spotReservation.profiles?.display_name || "un utilisateur"}`}
                             </p>
-                            {isMyReservation && (
+                            {(isMyReservation || isAdmin) && (
                               <Button
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => handleCancelReservation(spotReservation)}
                               >
-                                Annuler
+                                {isAdmin && !isMyReservation ? "Annuler (Admin)" : "Annuler"}
                               </Button>
                             )}
                           </div>
