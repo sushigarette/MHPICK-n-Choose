@@ -106,7 +106,7 @@ const Header: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={currentUser?.user_metadata?.avatar_url || "/lio2.png"} alt={currentUser?.email || ""} />
+                      <AvatarImage src={avatarUrl || "/lio2.png"} alt={currentUser?.email || ""} />
                       <AvatarFallback>{currentUser?.email?.[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </Button>
