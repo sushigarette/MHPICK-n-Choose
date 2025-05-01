@@ -84,7 +84,7 @@ const Header: React.FC = () => {
 
         <div className="flex items-center gap-4">
           {isAuthenticated && onlineUsers.length > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               <span className="text-xs text-muted-foreground">En ligne :</span>
               {onlineUsers.map(user => (
                 <div key={user.id} className="flex items-center">
