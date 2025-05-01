@@ -14,6 +14,10 @@ import {
 } from "./ui/table";
 import { Switch } from "./ui/switch";
 import Header from "./Header";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar } from "./ui/calendar";
 
 interface User {
   id: string;
@@ -23,63 +27,98 @@ interface User {
   is_admin: boolean;
 }
 
+interface Resource {
+  id: string;
+  name: string;
+  type: string;
+  is_active: boolean;
+  block_reason?: string;
+  block_until?: string;
+}
+
 const AdminPanel: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const [users, setUsers] = useState<User[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<'users' | 'resources'>('users');
+  const [resourceTypeFilter, setResourceTypeFilter] = useState<string>("all");
+  const [resourceSearch, setResourceSearch] = useState("");
+  const [resourceStatusFilter, setResourceStatusFilter] = useState<string>("all");
+  const [blockEdit, setBlockEdit] = useState<{[id: string]: {reason: string, until: string}}>({});
+  const [datePickerOpen, setDatePickerOpen] = useState<{[id: string]: boolean}>({});
 
   useEffect(() => {
     fetchUsers();
+    fetchResources();
   }, []);
 
   const fetchUsers = async () => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .order("display_name");
-
-    if (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les utilisateurs",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setUsers(data || []);
+      .order("display_name", { ascending: true });
+    if (!error) setUsers(data || []);
   };
 
-  const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
-    try {
+  const fetchResources = async () => {
+    const { data, error } = await supabase.from("resources").select("id, name, type, is_active, block_reason, block_until");
+    if (!error) setResources(data || []);
+  };
+
+  const toggleAdminStatus = async (userId: string, isAdmin: boolean) => {
+    const { error } = await supabase.from("profiles").update({ is_admin: !isAdmin }).eq("id", userId);
+    if (!error) {
+      setUsers(users.map(u => u.id === userId ? { ...u, is_admin: !isAdmin } : u));
+      toast({ title: "Rôle administrateur mis à jour" });
+    }
+  };
+
+  const toggleResourceActive = async (resourceId: string, isActive: boolean) => {
+    if (isActive) {
       const { error } = await supabase
-        .from("profiles")
-        .update({ is_admin: !currentStatus })
-        .eq("id", userId);
+        .from("resources")
+        .update({ 
+          is_active: true, 
+          block_reason: null, 
+          block_until: null 
+        })
+        .eq("id", resourceId);
 
-      if (error) throw error;
-
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, is_admin: !currentStatus } : user
-      ));
-
-      toast({
-        title: "Succès",
-        description: `Le statut administrateur a été ${!currentStatus ? "activé" : "désactivé"}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de modifier le statut administrateur",
-        variant: "destructive",
-      });
+      if (!error) {
+        setResources(resources.map(r => 
+          r.id === resourceId 
+            ? { ...r, is_active: true, block_reason: undefined, block_until: undefined } 
+            : r
+        ));
+        toast({ title: `Ressource activée` });
+      }
+    } else {
+      setBlockEdit(prev => ({
+        ...prev,
+        [resourceId]: { 
+          reason: resources.find(r => r.id === resourceId)?.block_reason || "", 
+          until: resources.find(r => r.id === resourceId)?.block_until?.slice(0, 16) || "" 
+        }
+      }));
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  const saveBlockInfo = async (resourceId: string) => {
+    const { reason, until } = blockEdit[resourceId] || {};
+    const { error } = await supabase.from("resources").update({ is_active: false, block_reason: reason, block_until: until ? new Date(until).toISOString() : null }).eq("id", resourceId);
+    if (!error) {
+      setResources(resources.map(r => r.id === resourceId ? { ...r, is_active: false, block_reason: reason, block_until: until } : r));
+      setBlockEdit(prev => { const copy = { ...prev }; delete copy[resourceId]; return copy; });
+      toast({ title: `Ressource désactivée` });
+    }
+  };
+
+  const filteredUsers = users.filter(
+    (user) =>
+      user.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -87,49 +126,181 @@ const AdminPanel: React.FC = () => {
       <Header />
       <div className="container mx-auto p-6">
         <div className="bg-card p-6 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold mb-6">Gestion des administrateurs</h1>
-          
-          <div className="mb-6">
-            <Input
-              type="text"
-              placeholder="Rechercher un utilisateur..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-sm"
-            />
+          <div className="flex gap-4 mb-8">
+            <Button variant={activeTab === 'users' ? 'default' : 'outline'} onClick={() => setActiveTab('users')}>
+              Gestion des utilisateurs
+            </Button>
+            <Button variant={activeTab === 'resources' ? 'default' : 'outline'} onClick={() => setActiveTab('resources')}>
+              Gestion des ressources
+            </Button>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Utilisateur</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead className="text-right">Administrateur</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="flex items-center gap-2">
-                    <img
-                      src={user.avatar_url || "/lio2.png"}
-                      alt={user.display_name}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <span>{user.display_name}</span>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell className="text-right">
-                    <Switch
-                      checked={user.is_admin}
-                      onCheckedChange={() => toggleAdminStatus(user.id, user.is_admin)}
-                      disabled={user.id === currentUser?.id}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {activeTab === 'users' && (
+            <>
+              <h1 className="text-2xl font-bold mb-6">Gestion des administrateurs</h1>
+              <div className="mb-6">
+                <Input
+                  type="text"
+                  placeholder="Rechercher un utilisateur..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+              <Table className="mb-10">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Utilisateur</TableHead>
+                    <TableHead className="text-right">Administrateur</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="flex items-center gap-2">
+                        <img
+                          src={user.avatar_url || "/lio2.png"}
+                          alt={user.display_name}
+                          className="w-8 h-8 rounded-full"
+                        />
+                        <span>{user.display_name}</span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Switch
+                          checked={user.is_admin}
+                          onCheckedChange={() => toggleAdminStatus(user.id, user.is_admin)}
+                          disabled={user.id === currentUser?.id}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
+          )}
+
+          {activeTab === 'resources' && (
+            <>
+              <h2 className="text-2xl font-bold mb-6">Gestion des ressources</h2>
+              <div className="mb-4 flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex gap-2 items-center">
+                  <label htmlFor="resourceTypeFilter">Type :</label>
+                  <select
+                    id="resourceTypeFilter"
+                    value={resourceTypeFilter}
+                    onChange={e => setResourceTypeFilter(e.target.value)}
+                    className="border rounded px-2 py-1 bg-background"
+                  >
+                    <option value="all">Tous</option>
+                    <option value="desk">Bureaux</option>
+                    <option value="room">Salles</option>
+                    <option value="slot">Parking</option>
+                    <option value="baby">Baby</option>
+                  </select>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <label htmlFor="resourceStatusFilter">État :</label>
+                  <select
+                    id="resourceStatusFilter"
+                    value={resourceStatusFilter}
+                    onChange={e => setResourceStatusFilter(e.target.value)}
+                    className="border rounded px-2 py-1 bg-background"
+                  >
+                    <option value="all">Tous</option>
+                    <option value="active">Actifs</option>
+                    <option value="inactive">Inactifs</option>
+                  </select>
+                </div>
+                <Input
+                  type="text"
+                  placeholder="Rechercher une ressource..."
+                  value={resourceSearch}
+                  onChange={e => setResourceSearch(e.target.value)}
+                  className="max-w-xs"
+                />
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Active</TableHead>
+                    <TableHead>Raison</TableHead>
+                    <TableHead>Jusqu'au</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {resources
+                    .filter(r => resourceTypeFilter === "all" || r.type === resourceTypeFilter)
+                    .filter(r => resourceStatusFilter === "all" || 
+                      (resourceStatusFilter === "active" && r.is_active) || 
+                      (resourceStatusFilter === "inactive" && !r.is_active))
+                    .filter(r => r.name.toLowerCase().includes(resourceSearch.toLowerCase()))
+                    .map((resource) => (
+                      <TableRow key={resource.id}>
+                        <TableCell>{resource.name}</TableCell>
+                        <TableCell>{resource.type}</TableCell>
+                        <TableCell>{resource.is_active ? "Oui" : "Non"}</TableCell>
+                        <TableCell>{resource.block_reason || "-"}</TableCell>
+                        <TableCell>{resource.block_until ? format(new Date(resource.block_until), "yyyy-MM-dd HH:mm") : "-"}</TableCell>
+                        <TableCell className="text-right">
+                          {blockEdit[resource.id] ? (
+                            <div className="flex flex-col gap-2">
+                              <input
+                                type="text"
+                                placeholder="Raison du blocage"
+                                value={blockEdit[resource.id].reason}
+                                onChange={e => setBlockEdit(prev => ({ ...prev, [resource.id]: { ...prev[resource.id], reason: e.target.value } }))}
+                                className="border rounded px-2 py-1 mb-1"
+                              />
+                              <Popover open={datePickerOpen[resource.id]} onOpenChange={open => setDatePickerOpen(prev => ({ ...prev, [resource.id]: open }))}>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-left font-normal"
+                                    onClick={() => setDatePickerOpen(prev => ({ ...prev, [resource.id]: true }))}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {blockEdit[resource.id].until ? format(new Date(blockEdit[resource.id].until), "yyyy-MM-dd HH:mm") : "Choisir une date"}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                  <Calendar
+                                    mode="single"
+                                    selected={blockEdit[resource.id].until ? new Date(blockEdit[resource.id].until) : undefined}
+                                    onSelect={date => {
+                                      if (date) {
+                                        const iso = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                                        setBlockEdit(prev => ({ ...prev, [resource.id]: { ...prev[resource.id], until: iso } }));
+                                        setDatePickerOpen(prev => ({ ...prev, [resource.id]: false }));
+                                      }
+                                    }}
+                                    className="rounded-md border"
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <div className="flex gap-2 mt-2">
+                                <Button size="sm" onClick={() => saveBlockInfo(resource.id)}>Enregistrer</Button>
+                                <Button size="sm" variant="outline" onClick={() => setBlockEdit(prev => { const copy = { ...prev }; delete copy[resource.id]; return copy; })}>Annuler</Button>
+                              </div>
+                            </div>
+                          ) : resource.is_active ? (
+                            <Button size="sm" variant="destructive" onClick={() => setBlockEdit(prev => ({ ...prev, [resource.id]: { reason: "", until: "" } }))}>
+                              Désactiver
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="default" onClick={() => toggleResourceActive(resource.id, true)}>
+                              Activer
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </>
+          )}
         </div>
       </div>
     </div>

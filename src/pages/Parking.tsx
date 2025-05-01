@@ -33,7 +33,32 @@ const Parking: React.FC = () => {
       reservations: []
     }));
     setParkingSpots(spots);
+    fetchResources();
   }, []);
+
+  const fetchResources = async () => {
+    const { data: resources, error } = await supabase
+      .from("resources")
+      .select("*")
+      .eq("type", "slot");
+
+    if (error) {
+      console.error("Error loading resources:", error);
+      return;
+    }
+
+    setParkingSpots(prevSpots => 
+      prevSpots.map(spot => {
+        const resource = resources.find(r => r.id === spot.id);
+        return {
+          ...spot,
+          is_active: resource?.is_active ?? true,
+          block_reason: resource?.block_reason,
+          block_until: resource?.block_until
+        };
+      })
+    );
+  };
 
   useEffect(() => {
     if (selectedDate) fetchReservations();
@@ -240,13 +265,31 @@ const Parking: React.FC = () => {
                 <div
                   key={spot.id}
                   className={`p-6 rounded-lg text-center min-h-[180px] flex flex-col justify-center items-center ${
-                    isReserved
+                    !spot.is_active
                       ? "bg-destructive/10 text-destructive"
-                      : "bg-green-500/10 text-green-500"
+                      : isReserved
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-green-500/10 text-green-500"
                   }`}
                 >
                   <p className="font-medium text-xl">Place {spot.id.replace("place_", "")}</p>
-                  {isReserved ? (
+                  {!spot.is_active ? (
+                    <div className="mt-4 flex flex-col items-center justify-center gap-2 w-full">
+                      <p className="text-sm text-center break-words w-full">
+                        Place désactivée
+                      </p>
+                      {spot.block_reason && (
+                        <p className="text-sm text-center break-words w-full">
+                          Raison : {spot.block_reason}
+                        </p>
+                      )}
+                      {spot.block_until && (
+                        <p className="text-sm text-center break-words w-full">
+                          Jusqu'au : {format(new Date(spot.block_until), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                        </p>
+                      )}
+                    </div>
+                  ) : isReserved ? (
                     isMyReservation ? (
                       <Button
                         variant="destructive"

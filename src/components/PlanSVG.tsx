@@ -16,7 +16,10 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect }) => {
     resource.type === "desk" || resource.type === "room"
   );
 
-  const getClassName = (reservations: any[], type: string) => {
+  const getClassName = (reservations: any[], type: string, isActive: boolean) => {
+    if (!isActive) {
+      return "fill-destructive/40 cursor-pointer"; // Désactivé mais cliquable
+    }
     if (reservations?.length) {
       return "fill-red-500"; // Reserved
     }
@@ -61,13 +64,25 @@ const PlanSVG: React.FC<PlanSVGProps> = ({ resources, onSelect }) => {
                 cy={resource.cy}
                 rx="12"
                 ry="12"
-                className={`cursor-pointer ${getClassName(resource.reservations, resource.type)}`}
+                className={`${getClassName(resource.reservations, resource.type, resource.is_active ?? true)}`}
                 whileHover={{ scale: 1.2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onSelect(resource)}
               />
             </TooltipTrigger>
-            {resource.reservations?.length > 0 && (
+            {!resource.is_active ? (
+              <TooltipContent>
+                <div className="flex flex-col gap-1">
+                  <p className="font-medium text-destructive">Ressource désactivée</p>
+                  {resource.block_reason && (
+                    <p className="text-sm">Raison : {resource.block_reason}</p>
+                  )}
+                  {resource.block_until && (
+                    <p className="text-sm">Jusqu'au : {format(new Date(resource.block_until), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}</p>
+                  )}
+                </div>
+              </TooltipContent>
+            ) : resource.reservations?.length > 0 && (
               <TooltipContent>
                 <div className="flex flex-col gap-1">
                   <p className="font-medium">{resource.reservations[0].profiles.display_name}</p>

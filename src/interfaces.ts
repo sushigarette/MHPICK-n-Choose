@@ -15,10 +15,13 @@ export type Reservation = {
 
 export type Resource = {
   id: string;
-  type: "desk" | "room" | "slot";
+  type: "desk" | "room" | "slot" | "baby";
   name: string;
   capacity: number;
   cx: number;
   cy: number;
   reservations?: Reservation[];
+  is_active?: boolean;
+  block_reason?: string;
+  block_until?: string;
 };
