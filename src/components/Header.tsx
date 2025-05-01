@@ -14,12 +14,31 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../context/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
+import supabase from "@/supabase";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, logout, displayName, avatarUrl } = useAuth();
   const [userEmail, setUserEmail] = useState("");
+
+  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchOnlineUsers = async () => {
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .gte('last_seen', twoMinutesAgo);
+
+      if (!error) setOnlineUsers(data || []);
+    };
+
+    fetchOnlineUsers();
+    const interval = setInterval(fetchOnlineUsers, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -47,6 +66,22 @@ const Header: React.FC = () => {
         </motion.div>
 
         <div className="flex items-center gap-4">
+          {onlineUsers.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">En ligne :</span>
+              {onlineUsers.map(user => (
+                <div key={user.id} className="flex items-center">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={user.avatar_url || '/lio2.png'} alt="avatar" />
+                    <AvatarFallback>
+                      {(user.display_name || '').substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="ml-1 text-xs">{user.display_name}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <ThemeToggle />
           {isAuthenticated ? (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>

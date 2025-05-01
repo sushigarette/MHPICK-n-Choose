@@ -72,6 +72,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (currentUser) fetchProfile();
   }, [currentUser]);
 
+  // AJOUT : Mise à jour du champ 'last_seen' toutes les 30 secondes
+  useEffect(() => {
+    if (!currentUser) return;
+    const updateLastSeen = async () => {
+      await supabase
+        .from('profiles')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('id', currentUser.id);
+    };
+    updateLastSeen();
+    const interval = setInterval(updateLastSeen, 30000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   const login = async (email: string, password: string): Promise<void> => {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
