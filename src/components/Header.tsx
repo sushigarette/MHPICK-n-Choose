@@ -83,7 +83,7 @@ const Header: React.FC = () => {
         </motion.div>
 
         <div className="flex items-center gap-4">
-          {onlineUsers.length > 0 && (
+          {isAuthenticated && onlineUsers.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">En ligne :</span>
               {onlineUsers.map(user => (
