@@ -474,18 +474,38 @@ const Dashboard: React.FC = () => {
                       r.date === format(selectedDate, "yyyy-MM-dd")
                     );
                     const isMyReservation = spotReservation?.user_id === currentUser?.id;
+                    const resource = resources.find(r => r.id === spotId);
+                    const isActive = resource?.is_active ?? true;
 
                     return (
                       <div
                         key={spotId}
                         className={`p-6 rounded-lg text-center h-[220px] w-[220px] flex flex-col justify-between items-center ${
-                          spotReservation
+                          !isActive
                             ? "bg-destructive/10 text-destructive"
-                            : "bg-green-500/10 text-green-500"
+                            : spotReservation
+                              ? "bg-destructive/10 text-destructive"
+                              : "bg-green-500/10 text-green-500"
                         }`}
                       >
                         <p className="font-medium text-xl mt-4">Place Baby {i + 1}</p>
-                        {spotReservation ? (
+                        {!isActive ? (
+                          <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
+                            <p className="text-sm text-center break-words w-full">
+                              Place désactivée
+                            </p>
+                            {resource?.block_reason && (
+                              <p className="text-sm text-center break-words w-full">
+                                Raison : {resource.block_reason}
+                              </p>
+                            )}
+                            {resource?.block_until && (
+                              <p className="text-sm text-center break-words w-full">
+                                Jusqu'au : {format(new Date(resource.block_until), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                              </p>
+                            )}
+                          </div>
+                        ) : spotReservation ? (
                           <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
                             <img
                               src={spotReservation.profiles?.avatar_url || "/lio2.png"}
