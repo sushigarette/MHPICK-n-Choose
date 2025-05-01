@@ -295,7 +295,10 @@ const Dashboard: React.FC = () => {
                       }
                     }}
                     className="rounded-md border"
-                    disabled={(date) => isBefore(startOfDay(date), startOfDay(new Date()))}
+                    disabled={(date) =>
+                      isBefore(startOfDay(date), startOfDay(new Date())) ||
+                      isAfter(startOfDay(date), startOfDay(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)))
+                    }
                     locale={fr}
                   />
                 </PopoverContent>
