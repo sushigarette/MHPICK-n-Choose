@@ -247,12 +247,12 @@ const AdminPanel: React.FC = () => {
                         <TableCell className="text-right">
                           {blockEdit[resource.id] ? (
                             <div className="flex flex-col gap-2">
-                              <input
+                              <Input
                                 type="text"
                                 placeholder="Raison du blocage"
                                 value={blockEdit[resource.id].reason}
                                 onChange={e => setBlockEdit(prev => ({ ...prev, [resource.id]: { ...prev[resource.id], reason: e.target.value } }))}
-                                className="border rounded px-2 py-1 mb-1"
+                                className="mb-1"
                               />
                               <Popover open={datePickerOpen[resource.id]} onOpenChange={open => setDatePickerOpen(prev => ({ ...prev, [resource.id]: open }))}>
                                 <PopoverTrigger asChild>
