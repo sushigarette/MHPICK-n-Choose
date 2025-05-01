@@ -51,7 +51,8 @@ const Dashboard: React.FC = () => {
     const { data: resources, error } = await supabase
       .from("resources")
       .select("*")
-      .in("type", ["desk", "room"]);
+      .in("type", ["desk", "room", "baby"]);
+
     if (error) throw error;
     setResources(resources);
     if (selectedDate) fetchReservations();
@@ -166,7 +167,8 @@ const Dashboard: React.FC = () => {
       }
 
       // Déterminer le type de ressource
-      const resourceType = resourceId.startsWith("place_") ? "slot" : 
+      const resourceType = resourceId.startsWith("place_baby_") ? "baby" :
+                         resourceId.startsWith("place_") ? "slot" : 
                          resourceId.startsWith("bureau_flex_") ? "desk" : 
                          resourceId.startsWith("salle_reunion_") ? "room" : "desk";
 
@@ -192,10 +194,12 @@ const Dashboard: React.FC = () => {
         description: `Vous avez réservé ${
           resourceType === "desk" ? "le bureau" : 
           resourceType === "slot" ? "la place de parking" : 
+          resourceType === "baby" ? "la place baby" :
           "la salle"
         } ${resourceId.replace(
           resourceType === "desk" ? "bureau_flex_" : 
           resourceType === "slot" ? "place_" : 
+          resourceType === "baby" ? "place_baby_" :
           "salle_reunion_", 
           ""
         )} pour le ${format(date, "dd MMMM yyyy", { locale: fr })} de ${startTime} à ${endTime}.`,
@@ -326,6 +330,8 @@ const Dashboard: React.FC = () => {
                     resourceName = `Bureau ${reservation.resource_id.replace("bureau_flex_", "")}`;
                   } else if (reservation.type === "slot") {
                     resourceName = `Place de parking ${reservation.resource_id.replace("place_", "")}`;
+                  } else if (reservation.type === "baby") {
+                    resourceName = `Place baby ${reservation.resource_id.replace("place_baby_", "")}`;
                   } else if (reservation.resource_id === "PhoneBox") {
                     resourceName = "PhoneBox";
                   } else {
@@ -360,6 +366,7 @@ const Dashboard: React.FC = () => {
             <TabsList className="flex gap-1 h-6 w-fit">
               <TabsTrigger value="bureaux" className="text-xs py-0 px-1">Bureaux</TabsTrigger>
               <TabsTrigger value="parking" className="text-xs py-0 px-1">Parking</TabsTrigger>
+              <TabsTrigger value="baby" className="text-xs py-0 px-1">Baby</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -367,7 +374,7 @@ const Dashboard: React.FC = () => {
             <div className="max-h-full md:grow-0 grow shadow-md">
               {activeTab === "bureaux" ? (
                 <PlanSVG resources={resources} onSelect={(resource) => setSelectedResource(resource)} />
-              ) : (
+              ) : activeTab === "parking" ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full justify-items-center items-center min-h-[calc(100vh-200px)] py-8">
                   {Array.from({ length: 12 }, (_, i) => {
                     const spotId = `place_${i + 1}`;
@@ -387,6 +394,60 @@ const Dashboard: React.FC = () => {
                         }`}
                       >
                         <p className="font-medium text-xl mt-4">Place {i + 1}</p>
+                        {spotReservation ? (
+                          <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
+                            <img
+                              src={spotReservation.profiles?.avatar_url || "/lio2.png"}
+                              alt="Profile"
+                              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                            />
+                            <p className="text-sm text-center break-words w-full">
+                              {isMyReservation ? "Réservée par vous" : `Réservée par ${spotReservation.profiles?.display_name || "un utilisateur"}`}
+                            </p>
+                            {isMyReservation && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleCancelReservation(spotReservation)}
+                              >
+                                Annuler
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleReservation(spotId, selectedDate, "00:00", "23:59")}
+                            className="mb-4"
+                          >
+                            Réserver
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full justify-items-center items-center min-h-[calc(100vh-200px)] py-8">
+                  {Array.from({ length: 4 }, (_, i) => {
+                    const spotId = `place_baby_${i + 1}`;
+                    const spotReservation = reservations.find(r => 
+                      r.resource_id === spotId && 
+                      r.date === format(selectedDate, "yyyy-MM-dd")
+                    );
+                    const isMyReservation = spotReservation?.user_id === currentUser?.id;
+
+                    return (
+                      <div
+                        key={spotId}
+                        className={`p-6 rounded-lg text-center h-[220px] w-[220px] flex flex-col justify-between items-center ${
+                          spotReservation
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-green-500/10 text-green-500"
+                        }`}
+                      >
+                        <p className="font-medium text-xl mt-4">Place Baby {i + 1}</p>
                         {spotReservation ? (
                           <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
                             <img
