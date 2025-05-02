@@ -8,6 +8,7 @@ interface AuthContextType {
   currentUser: User;
   displayName: string;
   avatarUrl: string;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -33,6 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User>(null); // Holds the current user info
   const [displayName, setDisplayName] = useState<string>(null);
   const [avatarUrl, setAvatarUrl] = useState<string>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -59,12 +61,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const fetchProfile = async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select("display_name, avatar_url, is_admin")
         .eq("id", currentUser?.id)
         .single();
       if (data) {
         setDisplayName(data.display_name);
         setAvatarUrl(data.avatar_url);
+        setIsAdmin(data.is_admin || false);
         setIsLoading(false);
       }
       if (error) console.error("Error fetching profile:", error);
@@ -111,11 +114,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (error) throw error;
     setCurrentUser(null); // Clear current user on logout
     setIsAuthenticated(false);
+    setIsAdmin(false);
   };
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, isLoading, currentUser, displayName, avatarUrl, login, logout, signup }}
+      value={{ isAuthenticated, isLoading, currentUser, displayName, avatarUrl, isAdmin, login, logout, signup }}
     >
       {children}
     </AuthContext.Provider>

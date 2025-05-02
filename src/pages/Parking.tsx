@@ -16,11 +16,11 @@ import { Reservation, Resource } from "@/interfaces";
 
 const Parking: React.FC = () => {
   const { toast } = useToast();
+  const { currentUser, isAdmin } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [parkingSpots, setParkingSpots] = useState<Resource[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
-  const { currentUser } = useAuth();
 
   useEffect(() => {
     const spots: Resource[] = Array.from({ length: 12 }, (_, i) => ({
@@ -251,20 +251,17 @@ const Parking: React.FC = () => {
           )}
         </div>
 
-        <div className="grow bg-card p-6 rounded-lg shadow-md">
-          <h2 className="font-semibold mb-4">
-            Places disponibles ({parkingSpots.filter(spot => !spot.reservations?.length).length}/{parkingSpots.length})
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="flex-1 bg-card p-6 rounded-lg shadow-md">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full justify-items-center items-center min-h-[calc(100vh-200px)] py-8">
             {parkingSpots.map((spot) => {
               const isReserved = spot.reservations.length > 0;
-              const isMyReservation = spot.reservations.some((r: any) => r.user_id === currentUser?.id);
               const reservation = spot.reservations[0];
+              const isMyReservation = reservation?.user_id === currentUser?.id;
 
               return (
                 <div
                   key={spot.id}
-                  className={`p-6 rounded-lg text-center min-h-[180px] flex flex-col justify-center items-center ${
+                  className={`p-6 rounded-lg text-center h-[220px] w-[220px] flex flex-col justify-between items-center ${
                     !spot.is_active
                       ? "bg-destructive/10 text-destructive"
                       : isReserved
@@ -272,32 +269,16 @@ const Parking: React.FC = () => {
                         : "bg-green-500/10 text-green-500"
                   }`}
                 >
-                  <p className="font-medium text-xl">Place {spot.id.replace("place_", "")}</p>
-                  {!spot.is_active ? (
-                    <div className="mt-4 flex flex-col items-center justify-center gap-2 w-full">
-                      <p className="text-sm text-center break-words w-full">
-                        Place désactivée
-                      </p>
-                      {spot.block_reason && (
-                        <p className="text-sm text-center break-words w-full">
-                          Raison : {spot.block_reason}
-                        </p>
-                      )}
-                      {spot.block_until && (
-                        <p className="text-sm text-center break-words w-full">
-                          Jusqu'au : {format(new Date(spot.block_until), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
-                        </p>
-                      )}
-                    </div>
-                  ) : isReserved ? (
-                    isMyReservation ? (
+                  <p className="font-medium text-xl mt-4">Place {spot.id.replace("place_", "")}</p>
+                  {isReserved ? (
+                    isMyReservation || isAdmin ? (
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => handleCancelReservation(reservation)}
                         className="mt-4"
                       >
-                        Annuler
+                        {isAdmin && !isMyReservation ? "Annuler (Admin)" : "Annuler"}
                       </Button>
                     ) : (
                       <div className="mt-4 flex flex-col items-center justify-center gap-2 w-full">

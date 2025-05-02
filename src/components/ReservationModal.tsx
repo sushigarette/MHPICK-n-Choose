@@ -26,7 +26,7 @@ const ReservationModal = ({
 }: ReservationModalProps) => {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
 
   const timeSlots = Array.from({ length: 17 }, (_, i) => {
     const hour = i + 8;
@@ -71,7 +71,7 @@ const ReservationModal = ({
               </Button>
             </DialogFooter>
           </div>
-        ) : resource.reservations?.length > 0 ? (
+        ) : resource.reservations && resource.reservations.length > 0 ? (
           <div className="flex flex-col gap-4 py-4">
             <div className="flex items-center gap-3">
               <img
@@ -93,7 +93,7 @@ const ReservationModal = ({
               <Button variant="outline" onClick={onClose}>
                 Fermer
               </Button>
-              {resource.reservations[0].user_id === currentUser?.id && (
+              {(resource.reservations[0].user_id === currentUser?.id || isAdmin) && (
                 <Button
                   variant="destructive"
                   onClick={() => {
@@ -101,7 +101,7 @@ const ReservationModal = ({
                     onClose();
                   }}
                 >
-                  Annuler la réservation
+                  {isAdmin && resource.reservations[0].user_id !== currentUser?.id ? "Annuler (Admin)" : "Annuler la réservation"}
                 </Button>
               )}
             </DialogFooter>

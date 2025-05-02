@@ -20,10 +20,8 @@ import { Settings, LogOut, LayoutDashboard, User, Calendar } from "lucide-react"
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated, logout, displayName, avatarUrl, currentUser } = useAuth();
+  const { isAuthenticated, logout, displayName, avatarUrl, currentUser, isAdmin } = useAuth();
   const [userEmail, setUserEmail] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
-
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -41,21 +39,6 @@ const Header: React.FC = () => {
     const interval = setInterval(fetchOnlineUsers, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (currentUser) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', currentUser.id)
-          .single();
-        
-        setIsAdmin(profile?.is_admin || false);
-      }
-    };
-    checkAdminStatus();
-  }, [currentUser]);
 
   const handleLogout = () => {
     logout();
