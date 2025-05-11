@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../context/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
 import supabase from "@/supabase";
-import { Settings, LogOut, LayoutDashboard, User, Calendar } from "lucide-react";
+import { Settings, LogOut, LayoutDashboard, User, Calendar, BarChart2 } from "lucide-react";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -123,8 +123,16 @@ const Header: React.FC = () => {
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Administration</span>
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate("/admin/stats")}>
+                        <BarChart2 className="mr-2 h-4 w-4" />
+                        <span>Statistiques TT</span>
+                      </DropdownMenuItem>
                     </>
                   )}
+                  <DropdownMenuItem onClick={() => navigate("/mes-signalements")}>
+                    <BarChart2 className="mr-2 h-4 w-4" />
+                    <span>Mes signalements TT</span>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />

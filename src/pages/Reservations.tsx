@@ -8,6 +8,7 @@ import supabase from "@/supabase";
 import { PostgrestError } from "@supabase/supabase-js";
 import { useAuth } from "@/context/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { saveAs } from "file-saver";
 
 const Reservations: React.FC = () => {
   const { toast } = useToast();
@@ -87,6 +88,21 @@ const Reservations: React.FC = () => {
     filterPeriod === "upcoming" ? upcomingReservations : pastReservations
   );
 
+  const exportCSV = (period: "upcoming" | "past") => {
+    const header = ["Type", "Nom de la ressource", "Date", "Heure de début", "Heure de fin"];
+    const reservations = filterByType(period === "upcoming" ? upcomingReservations : pastReservations);
+    const rows = reservations.map(reservation => [
+      reservation.type,
+      getResourceName(reservation),
+      reservation.date,
+      reservation.start_time,
+      reservation.end_time
+    ]);
+    const csvContent = [header, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, period === "upcoming" ? "reservations_a_venir.csv" : "reservations_passees.csv");
+  };
+
   return (
     <div className="min-h-screen flex grow flex-col bg-background">
       <Header />
@@ -129,17 +145,27 @@ const Reservations: React.FC = () => {
           </div>
 
           <div className="bg-card rounded-lg shadow-md overflow-hidden mt-4">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold">
-                {filterPeriod === "upcoming" ? "À venir" : "Passées"}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {filterPeriod === "upcoming"
-                  ? "Gérez vos réservations à venir"
-                  : "Historique de vos réservations"}
-              </p>
+            <div className="p-6 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">
+                  {filterPeriod === "upcoming" ? "À venir" : "Passées"}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {filterPeriod === "upcoming"
+                    ? "Gérez vos réservations à venir"
+                    : "Historique de vos réservations"}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {filterPeriod === "upcoming" && (
+                  <Button onClick={() => exportCSV("upcoming")}>Exporter à venir (CSV)</Button>
+                )}
+                {filterPeriod === "past" && (
+                  <Button onClick={() => exportCSV("past")}>Exporter passées (CSV)</Button>
+                )}
+              </div>
             </div>
-            <div className="divide-y">
+            <div className="divide-y max-h-[400px] overflow-y-auto">
               {displayedReservations.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground">
                   Aucune réservation {filterPeriod === "upcoming" ? "à venir" : "passée"}.

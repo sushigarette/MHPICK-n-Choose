@@ -17,6 +17,8 @@ import Loading from "./components/Loading";
 import { useEffect, useState } from "react";
 import supabase from "./supabase";
 import AdminPanel from "./components/AdminPanel";
+import AdminStats from "./pages/AdminStats";
+import MesSignalements from "./pages/MesSignalements";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +83,8 @@ const App = () => (
               <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />
               <Route path="/parking" element={<PrivateRoute element={<Parking />} />} />
               <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
+              <Route path="/admin/stats" element={<AdminRoute><AdminStats /></AdminRoute>} />
+              <Route path="/mes-signalements" element={<PrivateRoute element={<MesSignalements />} />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

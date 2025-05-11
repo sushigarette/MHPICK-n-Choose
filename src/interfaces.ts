@@ -7,6 +7,7 @@ export type Reservation = {
   start_time: string; // Time string (HH:mm:ss)
   end_time: string; // Time string (HH:mm:ss)
   created_at: string; // ISO datetime string
+  is_test?: boolean; // Flag pour identifier les réservations de test
   profiles: {
     display_name: string;
     avatar_url: string;

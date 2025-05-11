@@ -7,7 +7,7 @@ import { format, startOfDay, isBefore, isToday, isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, ArrowLeft, ArrowRight, Clock } from "lucide-react";
+import { CalendarIcon, ArrowLeft, ArrowRight, Clock, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -17,6 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 import { PostgrestError } from "@supabase/supabase-js";
 import PlanSVG from "@/components/PlanSVG";
 import { Reservation, Resource } from "@/interfaces";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
@@ -30,6 +31,16 @@ const Dashboard: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [addMode, setAddMode] = useState(false);
+  const [isShortage, setIsShortage] = useState(false);
+  const [shortageDetails, setShortageDetails] = useState<{
+    desks: { total: number; available: number };
+    parking: { total: number; available: number };
+    baby: { total: number; available: number };
+  }>({
+    desks: { total: 0, available: 0 },
+    parking: { total: 0, available: 0 },
+    baby: { total: 0, available: 0 }
+  });
 
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
@@ -66,6 +77,33 @@ const Dashboard: React.FC = () => {
       setResources(updatedResources);
     }
   }, [reservations]);
+
+  // Vérifier la pénurie de places
+  useEffect(() => {
+    if (resources.length && reservations.length) {
+      const desks = resources.filter(r => r.type === 'desk');
+      const parking = resources.filter(r => r.type === 'slot');
+      const baby = resources.filter(r => r.type === 'baby');
+
+      const reservedDesks = reservations.filter(r => r.type === 'desk').length;
+      const reservedParking = reservations.filter(r => r.type === 'slot').length;
+      const reservedBaby = reservations.filter(r => r.type === 'baby').length;
+
+      const details = {
+        desks: { total: desks.length, available: desks.length - reservedDesks },
+        parking: { total: parking.length, available: parking.length - reservedParking },
+        baby: { total: baby.length, available: baby.length - reservedBaby }
+      };
+
+      setShortageDetails(details);
+
+      const isDeskShortage = reservedDesks >= desks.length * 0.7; // 70% des bureaux réservés
+      const isParkingShortage = reservedParking >= parking.length * 0.7;
+      const isBabyShortage = reservedBaby >= baby.length * 0.7;
+
+      setIsShortage(isDeskShortage || isParkingShortage || isBabyShortage);
+    }
+  }, [resources, reservations]);
 
   const fetchResources = async (): Promise<void> => {
     const { data: resources, error } = await supabase
@@ -252,6 +290,113 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleTTReport = async () => {
+    if (!currentUser) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour signaler un TT.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("tt_reports")
+        .insert({
+          user_id: currentUser.id,
+          date: format(selectedDate, "yyyy-MM-dd"),
+          reason: "Pénurie de places",
+          details: {
+            desk_availability: shortageDetails.desks.available,
+            parking_availability: shortageDetails.parking.available,
+            baby_availability: shortageDetails.baby.available,
+            total_reservations: reservations.length
+          }
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Signalement enregistré",
+        description: "Merci pour votre retour !",
+      });
+    } catch (error) {
+      console.error("Erreur lors du signalement:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'enregistrer votre signalement.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Fonction pour créer des réservations de test
+  const createTestReservations = async () => {
+    if (!isAdmin) return;
+
+    const desks = resources.filter(r => r.type === 'desk');
+    
+    // Réserver 90% des bureaux
+    const numberOfReservations = Math.floor(desks.length * 0.9);
+    
+    for (let i = 0; i < numberOfReservations; i++) {
+      const desk = desks[i];
+      if (!desk) continue;
+
+      const { error } = await supabase.from("reservations").insert({
+        user_id: currentUser?.id,
+        resource_id: desk.id,
+        type: "desk",
+        date: format(selectedDate, "yyyy-MM-dd"),
+        start_time: "09:00",
+        end_time: "17:00",
+        is_test: true
+      });
+
+      if (error) {
+        console.error("Erreur lors de la création de la réservation de test:", error);
+      }
+    }
+
+    // Rafraîchir les réservations
+    fetchReservations();
+  };
+
+  const deleteTestReservations = async () => {
+    if (!isAdmin) return;
+
+    try {
+      const { error } = await supabase
+        .from("reservations")
+        .delete()
+        .eq("is_test", true)
+        .eq("user_id", currentUser?.id);
+
+      if (error) {
+        console.error("Erreur lors de la suppression des réservations de test:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer les réservations de test",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Succès",
+          description: "Les réservations de test ont été supprimées"
+        });
+        fetchReservations();
+      }
+    } catch (error) {
+      console.error("Erreur inattendue:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur inattendue s'est produite",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="h-full flex flex-col grow gap-2 bg-background">
       <Header />
@@ -345,7 +490,7 @@ const Dashboard: React.FC = () => {
           {myReservations.length > 0 && (
             <>
               <h2 className="font-semibold">Mes réservations</h2>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-2">
                 {myReservations.map((reservation, index) => {
                   let resourceName = "";
                   if (reservation.type === "desk") {
@@ -381,6 +526,30 @@ const Dashboard: React.FC = () => {
               </div>
             </>
           )}
+
+          {isShortage && (
+            <Alert variant="default" className="mt-4 border-yellow-500 bg-yellow-50">
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <AlertTitle className="text-yellow-700">Forte affluence prévue</AlertTitle>
+              <AlertDescription className="mt-2 text-yellow-600">
+                <div className="space-y-2">
+                  <p>Disponibilité pour le {format(selectedDate, "dd MMMM yyyy", { locale: fr })} :</p>
+                  <ul className="text-sm space-y-1">
+                    <li>Bureaux : {shortageDetails.desks.available}/{shortageDetails.desks.total}</li>
+                    <li>Parking : {shortageDetails.parking.available}/{shortageDetails.parking.total}</li>
+                    <li>Baby : {shortageDetails.baby.available}/{shortageDetails.baby.total}</li>
+                  </ul>
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2"
+                    onClick={handleTTReport}
+                  >
+                    Je reste en TT car il n'y a plus de place
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         <div className="max-h-full grow flex flex-col bg-card p-6 rounded-lg shadow-md">
@@ -391,6 +560,25 @@ const Dashboard: React.FC = () => {
               <TabsTrigger value="baby" className="text-xs py-0 px-1">Baby</TabsTrigger>
             </TabsList>
           </Tabs>
+
+          {isAdmin && (
+            <div className="flex justify-center gap-4 mb-4">
+              <Button
+                variant="outline"
+                onClick={createTestReservations}
+                className="min-w-[200px]"
+              >
+                Simuler une pénurie pour le {format(selectedDate, "dd MMMM yyyy", { locale: fr })}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={deleteTestReservations}
+                className="min-w-[200px]"
+              >
+                Supprimer les réservations de test
+              </Button>
+            </div>
+          )}
 
           {isAdmin && (
             <div className="flex justify-center gap-4 mb-4">
