@@ -7,10 +7,11 @@ import { format, startOfDay, isBefore, isToday, isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, ArrowLeft, ArrowRight } from "lucide-react";
+import { CalendarIcon, ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import supabase from "@/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PostgrestError } from "@supabase/supabase-js";
@@ -27,6 +28,8 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("bureaux");
   const { currentUser } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [addMode, setAddMode] = useState(false);
 
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
@@ -86,7 +89,7 @@ const Dashboard: React.FC = () => {
     } = await supabase
       .from("reservations")
       .select("*, profiles:user_id(*)")
-      .filter("date", "eq", format(selectedDate, "yyyy-MM-dd"));
+      .eq("date", format(selectedDate, "yyyy-MM-dd"));
 
     if (error) return console.error("Error loading reservations:", error);
 
@@ -95,10 +98,10 @@ const Dashboard: React.FC = () => {
     
     // Mettre à jour les ressources avec les réservations
     if (resources.length) {
-      const updatedResources = resources.map((resource) => ({
-        ...resource,
-        reservations: (reservations || []).filter((res) => res.resource_id === resource.id)
-      }));
+      const updatedResources = resources.map((resource) => {
+        const res = reservations.filter((res) => res.resource_id === resource.id);
+        return { ...resource, reservations: res };
+      });
       setResources(updatedResources);
     }
 
@@ -118,7 +121,7 @@ const Dashboard: React.FC = () => {
     setMyReservations(allUserReservations || []);
   };
 
-  const handleReservation = async (resourceId: string, date: Date, startTime: string, endTime: string) => {
+  const handleReservation = async (resourceId: string, date: Date, startTime: string = "09:00", endTime: string = "17:00") => {
     if (!currentUser) {
       toast({
         title: "Erreur",
@@ -169,8 +172,7 @@ const Dashboard: React.FC = () => {
         .from("reservations")
         .select("*")
         .eq("resource_id", resourceId)
-        .eq("date", format(date, "yyyy-MM-dd"))
-        .or(`start_time.lte.${endTime},end_time.gte.${startTime}`);
+        .eq("date", format(date, "yyyy-MM-dd"));
 
       if (checkError) throw checkError;
 
@@ -390,10 +392,114 @@ const Dashboard: React.FC = () => {
             </TabsList>
           </Tabs>
 
+          {isAdmin && (
+            <div className="flex justify-center gap-4 mb-4">
+              <Button
+                variant={editMode ? "destructive" : "outline"}
+                onClick={() => {
+                  setEditMode((v) => !v);
+                  setAddMode(false);
+                }}
+                className="min-w-[200px]"
+              >
+                {editMode ? "Quitter le mode édition" : "Modifier la position des boutons"}
+              </Button>
+              <Button
+                variant={addMode ? "destructive" : "outline"}
+                onClick={() => {
+                  setAddMode((v) => !v);
+                  setEditMode(false);
+                }}
+                className="min-w-[200px]"
+              >
+                {addMode ? "Quitter le mode ajout" : "Ajouter un bureau"}
+              </Button>
+            </div>
+          )}
+
           <div className="max-h-full grow flex align-center justify-center">
             <div className="max-h-full md:grow-0 grow shadow-md">
               {activeTab === "bureaux" ? (
-                <PlanSVG resources={resources} onSelect={(resource) => setSelectedResource(resource)} />
+                <PlanSVG
+                  resources={resources}
+                  onSelect={(resource) => setSelectedResource(resource)}
+                  isAdmin={isAdmin}
+                  editMode={editMode}
+                  addMode={addMode}
+                  onUpdateResourcePosition={async (id, cx, cy) => {
+                    await supabase.from("resources").update({ cx, cy }).eq("id", id);
+                    await fetchResources();
+                    toast({ title: "Position enregistrée !" });
+                  }}
+                  onAddResource={async (cx, cy) => {
+                    try {
+                      const newDeskNumber = resources.filter(r => r.type === 'desk').length + 1;
+                      const newResource = {
+                        id: `bureau_flex_${newDeskNumber}`,
+                        type: "desk",
+                        name: `Bureau ${newDeskNumber}`,
+                        cx: Math.round(cx),
+                        cy: Math.round(cy),
+                        is_active: true
+                      };
+                      
+                      console.log('Tentative d\'ajout du bureau:', newResource);
+                      
+                      const { data, error } = await supabase
+                        .from("resources")
+                        .insert(newResource)
+                        .select()
+                        .single();
+
+                      if (error) {
+                        console.error('Erreur Supabase:', error);
+                        toast({
+                          title: "Erreur",
+                          description: `Impossible d'ajouter le bureau: ${error.message}`,
+                          variant: "destructive"
+                        });
+                      } else {
+                        console.log('Bureau ajouté avec succès:', data);
+                        setResources(prevResources => [...prevResources, data]);
+                        toast({ title: "Bureau ajouté !" });
+                      }
+                    } catch (err) {
+                      console.error('Erreur inattendue:', err);
+                      toast({
+                        title: "Erreur",
+                        description: "Une erreur inattendue s'est produite",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  onDeleteResource={async (id) => {
+                    try {
+                      const { error } = await supabase
+                        .from("resources")
+                        .delete()
+                        .eq("id", id);
+
+                      if (error) {
+                        console.error('Erreur Supabase:', error);
+                        toast({
+                          title: "Erreur",
+                          description: `Impossible de supprimer le bureau: ${error.message}`,
+                          variant: "destructive"
+                        });
+                      } else {
+                        setResources(prevResources => prevResources.filter(r => r.id !== id));
+                        toast({ title: "Bureau supprimé !" });
+                      }
+                    } catch (err) {
+                      console.error('Erreur inattendue:', err);
+                      toast({
+                        title: "Erreur",
+                        description: "Une erreur inattendue s'est produite",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                />
               ) : activeTab === "parking" ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full justify-items-center items-center min-h-[calc(100vh-200px)] py-8">
                   {Array.from({ length: 12 }, (_, i) => {
@@ -458,7 +564,7 @@ const Dashboard: React.FC = () => {
                           <Button
                             variant="default"
                             size="sm"
-                            onClick={() => handleReservation(spotId, selectedDate, "00:00", "23:59")}
+                            onClick={() => handleReservation(spotId, selectedDate)}
                             className="mb-4"
                           >
                             Réserver
@@ -532,7 +638,7 @@ const Dashboard: React.FC = () => {
                           <Button
                             variant="default"
                             size="sm"
-                            onClick={() => handleReservation(spotId, selectedDate, "00:00", "23:59")}
+                            onClick={() => handleReservation(spotId, selectedDate)}
                             className="mb-4"
                           >
                             Réserver
