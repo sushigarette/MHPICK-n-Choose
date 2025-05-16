@@ -67,31 +67,33 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   return isAdmin ? <>{children}</> : <Navigate to="/dashboard" />;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
-              <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
-              <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />
-              <Route path="/parking" element={<PrivateRoute element={<Parking />} />} />
-              <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
-              <Route path="/admin/stats" element={<AdminRoute><AdminStats /></AdminRoute>} />
-              <Route path="/mes-signalements" element={<PrivateRoute element={<MesSignalements />} />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
+                <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
+                <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />
+                <Route path="/parking" element={<PrivateRoute element={<Parking />} />} />
+                <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
+                <Route path="/admin/stats" element={<AdminRoute><AdminStats /></AdminRoute>} />
+                <Route path="/mes-signalements" element={<PrivateRoute element={<MesSignalements />} />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

@@ -105,7 +105,7 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
     <div 
       className="w-full h-full flex items-center justify-center" 
       style={{ 
-        backgroundImage: 'url(/plan.svg)',
+        backgroundImage: 'url(/plan1.svg)',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         backgroundSize: '90% 90%',
