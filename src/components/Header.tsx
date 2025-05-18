@@ -59,7 +59,7 @@ const Header: React.FC = () => {
           className="flex items-center space-x-2 cursor-pointer"
           onClick={() => navigate("/")}
         >
-          <img className="h-8" src={"/lio.png"}></img>
+          <img className="h-8" src={"/logomhp.png"}></img>
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text">
             MHPick
           </span>
