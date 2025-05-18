@@ -56,11 +56,17 @@ const Header: React.FC = () => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex items-center space-x-2 cursor-pointer"
-          onClick={() => navigate("/")}
+          className="flex items-center space-x-2"
         >
-          <img className="h-8" src={"/logomhp.png"}></img>
-          <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text">
+          <img 
+            className="h-12 cursor-pointer" 
+            src={"/logomhp.png"}
+            onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=2+Imp.+Boudeville,+31100+Toulouse', '_blank')}
+          />
+          <span 
+            className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text cursor-pointer"
+            onClick={() => navigate("/dashboard")}
+          >
             MHPick
           </span>
         </motion.div>
