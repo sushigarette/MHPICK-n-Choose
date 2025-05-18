@@ -103,22 +103,24 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
 
   return (
     <div 
-      className="w-full h-full flex items-center justify-center" 
+      className="w-full h-full flex items-center justify-center overflow-hidden" 
       style={{ 
         backgroundImage: 'url(/plan1.svg)',
-        backgroundPosition: 'center',
+        backgroundPosition: 'center center',
         backgroundRepeat: 'no-repeat',
-        backgroundSize: '90% 90%',
-        minHeight: '800px',
-        margin: 'auto'
+        backgroundSize: 'contain',
+        height: 'calc(100vh - 64px)',
+        width: '100%',
+        margin: '0',
+        padding: '0'
       }}
     >
       <svg
         viewBox="0 0 1112 1196"
-        className="w-[90%] h-[90%]"
+        className="w-full h-full"
         style={{
-          minHeight: '800px',
-          maxHeight: '90vh'
+          maxHeight: '100%',
+          maxWidth: '100%'
         }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
