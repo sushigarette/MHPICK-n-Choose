@@ -442,10 +442,23 @@ const Dashboard: React.FC = () => {
                       }
                     }}
                     className="rounded-md border"
-                    disabled={(date) =>
-                      isBefore(startOfDay(date), startOfDay(new Date())) ||
-                      isAfter(startOfDay(date), startOfDay(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)))
-                    }
+                    disabled={(date) => {
+                      const today = startOfDay(new Date());
+                      const maxDate = new Date(today);
+                      let added = 0;
+                      while (added < 7) {
+                        maxDate.setDate(maxDate.getDate() + 1);
+                        // Si c'est un jour ouvrable (lundi à vendredi)
+                        if (maxDate.getDay() !== 0 && maxDate.getDay() !== 6) {
+                          added++;
+                        }
+                      }
+                      return (
+                        isBefore(startOfDay(date), today) ||
+                        isAfter(startOfDay(date), maxDate) ||
+                        date.getDay() === 0 || date.getDay() === 6 // désactive samedi/dimanche
+                      );
+                    }}
                     locale={fr}
                   />
                 </PopoverContent>
