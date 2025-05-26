@@ -98,6 +98,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signup = async (email: string, password: string): Promise<void> => {
+    // Vérification du domaine
+    if (!email.toLowerCase().endsWith("@mhcomm.fr")) {
+      throw new Error("Seules les adresses email se terminant par @mhcomm.fr sont autorisées.");
+    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
