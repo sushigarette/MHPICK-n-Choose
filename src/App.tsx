@@ -19,6 +19,7 @@ import supabase from "./supabase";
 import AdminPanel from "./components/AdminPanel";
 import AdminStats from "./pages/AdminStats";
 import MesSignalements from "./pages/MesSignalements";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const App = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
                 <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
                 <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />

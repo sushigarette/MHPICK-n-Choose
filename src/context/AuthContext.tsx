@@ -12,6 +12,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -117,9 +118,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAdmin(false);
   };
 
+  const resetPassword = async (email: string): Promise<void> => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+  };
+
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, isLoading, currentUser, displayName, avatarUrl, isAdmin, login, logout, signup }}
+      value={{ isAuthenticated, isLoading, currentUser, displayName, avatarUrl, isAdmin, login, logout, signup, resetPassword }}
     >
       {children}
     </AuthContext.Provider>

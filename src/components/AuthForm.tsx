@@ -109,12 +109,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
 
           <div className="text-center mt-4">
             {type === "login" ? (
-              <p className="text-sm text-muted-foreground">
-                Vous n'avez pas de compte?{" "}
-                <Button variant="link" className="p-0" onClick={() => navigate("/register")}>
-                  S'inscrire
+              <>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Vous n'avez pas de compte?{" "}
+                  <Button variant="link" className="p-0" onClick={() => navigate("/register")}>
+                    S'inscrire
+                  </Button>
+                </p>
+                <Button variant="link" className="p-0" onClick={() => navigate("/reset-password")}>
+                  Mot de passe oublié ?
                 </Button>
-              </p>
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">
                 Vous avez déjà un compte?{" "}
