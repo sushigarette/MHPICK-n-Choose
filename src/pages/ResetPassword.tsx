@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 import ResetPasswordForm from "../components/ResetPasswordForm";
 import Header from "../components/Header";
-import { useSearchParams } from "react-router-dom";
 import supabase from "@/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-function getTokenAndType(searchParams: URLSearchParams): { token: string; type: string } {
+function getTokenAndType(): { token: string; type: string } {
   // Cherche dans les query params
+  const searchParams = new URLSearchParams(window.location.search);
   let token = searchParams.get("access_token") || searchParams.get("token") || "";
   let type = searchParams.get("type") || "";
 
-  // Si pas trouvé, cherche dans le hash
+  // Si pas trouvé, cherche dans le hash (et le parse comme une query string)
   if (!token || !type) {
     const hash = window.location.hash.replace(/^#/, "");
     const hashParams = new URLSearchParams(hash);
@@ -22,19 +22,18 @@ function getTokenAndType(searchParams: URLSearchParams): { token: string; type: 
 }
 
 const ResetPassword = () => {
-  const [searchParams] = useSearchParams();
   const [{ token, type }, setTokenType] = useState({ token: "", type: "" });
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setTokenType(getTokenAndType(searchParams));
+    setTokenType(getTokenAndType());
     // Ajoute un listener pour le hashchange (au cas où le hash change après le chargement)
-    const onHashChange = () => setTokenType(getTokenAndType(searchParams));
+    const onHashChange = () => setTokenType(getTokenAndType());
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
-  }, [searchParams]);
+  }, []);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
