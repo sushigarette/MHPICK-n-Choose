@@ -131,6 +131,7 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
           const isReserved = resource.reservations?.length > 0;
           const isDragging = draggedResource?.id === resource.id;
 
+          // Affichage de l'avatar si réservé
           return (
             <Tooltip key={resource.id}>
               <TooltipTrigger asChild>
@@ -138,17 +139,29 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
                   onMouseDown={(e) => handleMouseDown(e, resource)}
                   style={{ cursor: isAdmin && editMode ? "move" : "pointer" }}
                 >
-                  <motion.ellipse
-                    id={resource.id}
-                    cx={resource.cx}
-                    cy={resource.cy}
-                    rx="12"
-                    ry="12"
-                    className={`${getClassName(resource.reservations, resource.type, resource.is_active ?? true)}`}
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => onSelect(resource)}
-                  />
+                  {isReserved && resource.type === "desk" && resource.reservations[0]?.profiles?.avatar_url ? (
+                    <image
+                      href={resource.reservations[0].profiles.avatar_url}
+                      x={resource.cx - 32}
+                      y={resource.cy - 32}
+                      width="64"
+                      height="64"
+                      clipPath="circle(32px at 32px 32px)"
+                      onClick={() => onSelect(resource)}
+                    />
+                  ) : (
+                    <motion.ellipse
+                      id={resource.id}
+                      cx={resource.cx}
+                      cy={resource.cy}
+                      rx="12"
+                      ry="12"
+                      className={`${getClassName(resource.reservations, resource.type, resource.is_active ?? true)}`}
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => onSelect(resource)}
+                    />
+                  )}
                   {isDragging && (
                     <text
                       x={resource.cx + 20}
