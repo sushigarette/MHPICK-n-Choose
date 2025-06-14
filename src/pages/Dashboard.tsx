@@ -205,6 +205,31 @@ const Dashboard: React.FC = () => {
     }
 
     try {
+      // Déterminer le type de ressource
+      const resourceType = resourceId.startsWith("place_baby_") ? "baby" :
+                         resourceId.startsWith("place_") ? "slot" : 
+                         resourceId.startsWith("bureau_flex_") ? "desk" : 
+                         resourceId.startsWith("salle_reunion_") ? "room" : "desk";
+
+      // Vérifier si l'utilisateur a déjà une réservation pour ce type de ressource à cette date
+      const { data: existingUserReservations, error: userCheckError } = await supabase
+        .from("reservations")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .eq("date", format(date, "yyyy-MM-dd"))
+        .eq("type", resourceType);
+
+      if (userCheckError) throw userCheckError;
+
+      if (existingUserReservations?.length > 0) {
+        toast({
+          title: "Réservation impossible",
+          description: `Vous avez déjà une réservation de ${resourceType === "desk" ? "bureau" : resourceType === "slot" ? "parking" : resourceType === "baby" ? "place baby" : "salle"} pour cette date.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Step 1: Check for existing reservations
       const { data: existingReservations, error: checkError } = await supabase
         .from("reservations")
@@ -222,12 +247,6 @@ const Dashboard: React.FC = () => {
         });
         return;
       }
-
-      // Déterminer le type de ressource
-      const resourceType = resourceId.startsWith("place_baby_") ? "baby" :
-                         resourceId.startsWith("place_") ? "slot" : 
-                         resourceId.startsWith("bureau_flex_") ? "desk" : 
-                         resourceId.startsWith("salle_reunion_") ? "room" : "desk";
 
       // Step 2: Insert the reservation
       const { error: insertError } = await supabase.from("reservations").insert([
@@ -469,8 +488,36 @@ const Dashboard: React.FC = () => {
                 onClick={() => {
                   const newDate = new Date(selectedDate);
                   newDate.setDate(newDate.getDate() + 1);
-                  setSelectedDate(newDate);
+                  
+                  // Vérifier si la nouvelle date est dans la limite des 7 jours ouvrables
+                  const today = startOfDay(new Date());
+                  const maxDate = new Date(today);
+                  let added = 0;
+                  while (added < 7) {
+                    maxDate.setDate(maxDate.getDate() + 1);
+                    // Si c'est un jour ouvrable (lundi à vendredi)
+                    if (maxDate.getDay() !== 0 && maxDate.getDay() !== 6) {
+                      added++;
+                    }
+                  }
+                  
+                  // Ne mettre à jour la date que si elle est dans les limites
+                  if (!isAfter(startOfDay(newDate), maxDate) && newDate.getDay() !== 0 && newDate.getDay() !== 6) {
+                    setSelectedDate(newDate);
+                  }
                 }}
+                disabled={(() => {
+                  const today = startOfDay(new Date());
+                  const maxDate = new Date(today);
+                  let added = 0;
+                  while (added < 7) {
+                    maxDate.setDate(maxDate.getDate() + 1);
+                    if (maxDate.getDay() !== 0 && maxDate.getDay() !== 6) {
+                      added++;
+                    }
+                  }
+                  return isAfter(startOfDay(selectedDate), maxDate) || selectedDate.getDay() === 5; // Désactive le bouton si on est vendredi
+                })()}
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
