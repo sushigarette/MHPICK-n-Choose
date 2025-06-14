@@ -59,7 +59,7 @@ const Header: React.FC = () => {
           className="flex items-center space-x-2"
         >
           <img 
-            className="h-12 cursor-pointer" 
+            className="h-12 cursor-pointer dark:invert" 
             src={"/logomhp.png"}
             onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=2+Imp.+Boudeville,+31100+Toulouse', '_blank')}
           />
