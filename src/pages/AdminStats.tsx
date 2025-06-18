@@ -52,9 +52,14 @@ const AdminStats: React.FC = () => {
   const [reports, setReports] = useState<TTReport[]>([]);
   const [dailyStats, setDailyStats] = useState<any[]>([]);
   const [showMine, setShowMine] = useState(false);
+  const [reservationStats, setReservationStats] = useState<{
+    total: number;
+    byDay: { [date: string]: { count: number; users: Set<string> } };
+  }>({ total: 0, byDay: {} });
 
   useEffect(() => {
     fetchReports();
+    fetchReservationStats();
   }, [startDate, endDate]);
 
   const fetchReports = async () => {
@@ -118,6 +123,28 @@ const AdminStats: React.FC = () => {
     setDailyStats(stats || []);
   };
 
+  const fetchReservationStats = async () => {
+    const { data, error } = await supabase
+      .from("reservations")
+      .select("date, user_id")
+      .gte("date", format(startDate, "yyyy-MM-dd"))
+      .lte("date", format(endDate, "yyyy-MM-dd"));
+    if (error) {
+      console.error("Erreur lors de la récupération des réservations:", error);
+      setReservationStats({ total: 0, byDay: {} });
+      return;
+    }
+    let total = 0;
+    const byDay: { [date: string]: { count: number; users: Set<string> } } = {};
+    data?.forEach((res: { date: string; user_id: string }) => {
+      total++;
+      if (!byDay[res.date]) byDay[res.date] = { count: 0, users: new Set() };
+      byDay[res.date].count++;
+      byDay[res.date].users.add(res.user_id);
+    });
+    setReservationStats({ total, byDay });
+  };
+
   const exportCSV = () => {
     const header = ["Date", "Utilisateur", "Disponibilité Bureaux", "Disponibilité Parking"];
     const rows = reports
@@ -131,6 +158,20 @@ const AdminStats: React.FC = () => {
     const csvContent = [header, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, "statistiques_tt.csv");
+  };
+
+  const exportReservationsCSV = () => {
+    const header = ["Date", "Nombre de réservations", "Nombre de personnes uniques"];
+    const rows = Object.entries(reservationStats.byDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, stats]) => [
+        format(new Date(date), "dd/MM/yyyy", { locale: fr }),
+        stats.count,
+        stats.users.size
+      ]);
+    const csvContent = [header, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, "statistiques_reservations.csv");
   };
 
   return (
@@ -233,6 +274,52 @@ const AdminStats: React.FC = () => {
                 ))}
             </TableBody>
           </Table>
+        </div>
+
+        <div className="bg-card p-6 rounded-lg shadow-md mt-8">
+          <h2 className="text-xl font-bold mb-4">Statistiques des réservations</h2>
+          <div className="mb-4">
+            <strong>Total de réservations sur la période :</strong> {reservationStats.total}
+          </div>
+          <button onClick={exportReservationsCSV} className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Exporter les réservations (CSV)</button>
+          <div className="mb-4">
+            <h3 className="font-semibold mb-2">Nombre de réservations par jour</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Nombre de réservations</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Object.entries(reservationStats.byDay).sort(([a], [b]) => a.localeCompare(b)).map(([date, stats]) => (
+                  <TableRow key={date}>
+                    <TableCell>{format(new Date(date), "dd/MM/yyyy", { locale: fr })}</TableCell>
+                    <TableCell>{stats.count}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="mb-4">
+            <h3 className="font-semibold mb-2">Nombre de personnes différentes par jour</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Nombre de personnes uniques</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Object.entries(reservationStats.byDay).sort(([a], [b]) => a.localeCompare(b)).map(([date, stats]) => (
+                  <TableRow key={date}>
+                    <TableCell>{format(new Date(date), "dd/MM/yyyy", { locale: fr })}</TableCell>
+                    <TableCell>{stats.users.size}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     </div>

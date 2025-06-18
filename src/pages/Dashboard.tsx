@@ -18,6 +18,7 @@ import { PostgrestError } from "@supabase/supabase-js";
 import PlanSVG from "@/components/PlanSVG";
 import { Reservation, Resource } from "@/interfaces";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import SnakeGame from "../components/SnakeGame";
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
@@ -41,6 +42,7 @@ const Dashboard: React.FC = () => {
     parking: { total: 0, available: 0 },
     baby: { total: 0, available: 0 }
   });
+  const [showSnakeGame, setShowSnakeGame] = useState(false);
 
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
@@ -104,6 +106,20 @@ const Dashboard: React.FC = () => {
       setIsShortage(isDeskShortage || isParkingShortage || isBabyShortage);
     }
   }, [resources, reservations]);
+
+  // Détecter l'easter egg
+  useEffect(() => {
+    const checkEasterEgg = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('easter') === 'lionel') {
+        setShowSnakeGame(true);
+      }
+    };
+
+    checkEasterEgg();
+    window.addEventListener('popstate', checkEasterEgg);
+    return () => window.removeEventListener('popstate', checkEasterEgg);
+  }, []);
 
   const fetchResources = async (): Promise<void> => {
     const { data: resources, error } = await supabase
@@ -912,6 +928,11 @@ const Dashboard: React.FC = () => {
           onCancelReservation={handleCancelReservation}
         />
       )}
+
+      <SnakeGame
+        isOpen={showSnakeGame}
+        onClose={() => setShowSnakeGame(false)}
+      />
     </div>
   );
 };
