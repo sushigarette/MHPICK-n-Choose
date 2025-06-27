@@ -100,10 +100,7 @@ const Dashboard: React.FC = () => {
       setShortageDetails(details);
 
       const isDeskShortage = reservedDesks >= desks.length * 0.7; // 70% des bureaux réservés
-      const isParkingShortage = reservedParking >= parking.length * 0.7;
-      const isBabyShortage = reservedBaby >= baby.length * 0.7;
-
-      setIsShortage(isDeskShortage || isParkingShortage || isBabyShortage);
+      setIsShortage(isDeskShortage);
     }
   }, [resources, reservations]);
 
