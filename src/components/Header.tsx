@@ -78,7 +78,7 @@ const Header: React.FC = () => {
 
           <div className="flex items-center gap-2">
             {isAuthenticated && onlineUsers.length > 0 && (
-              <div className="flex items-center gap-1">
+              <div className="hidden md:flex items-center gap-1">
                 <span className="text-xs text-muted-foreground whitespace-nowrap">En ligne:</span>
                 <div className="flex items-center gap-1">
                   {onlineUsers.slice(0, 4).map(user => (
@@ -191,11 +191,10 @@ const Header: React.FC = () => {
                 <Button onClick={() => navigate("/register")}>S'inscrire</Button>
               </motion.div>
             )}
-          </div>
-
-          {/* Météo centrée en absolu */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <WeatherWidget />
+            {/* Météo centrée en absolu sur desktop uniquement */}
+            <div className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <WeatherWidget />
+            </div>
           </div>
         </div>
       </div>
