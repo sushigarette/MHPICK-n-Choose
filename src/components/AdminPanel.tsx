@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import supabase from "@/supabase";
 import { Button } from "./ui/button";
@@ -15,7 +15,7 @@ import {
 import { Switch } from "./ui/switch";
 import Header from "./Header";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Pencil } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 
@@ -25,6 +25,7 @@ interface User {
   display_name: string;
   avatar_url: string;
   is_admin: boolean;
+  is_active: boolean;
 }
 
 interface Resource {
@@ -48,6 +49,8 @@ const AdminPanel: React.FC = () => {
   const [resourceStatusFilter, setResourceStatusFilter] = useState<string>("all");
   const [blockEdit, setBlockEdit] = useState<{[id: string]: {reason: string, until: string}}>({});
   const [datePickerOpen, setDatePickerOpen] = useState<{[id: string]: boolean}>({});
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>("");
 
   useEffect(() => {
     fetchUsers();
@@ -72,6 +75,14 @@ const AdminPanel: React.FC = () => {
     if (!error) {
       setUsers(users.map(u => u.id === userId ? { ...u, is_admin: !isAdmin } : u));
       toast({ title: "Rôle administrateur mis à jour" });
+    }
+  };
+
+  const toggleUserActive = async (userId: string, isActive: boolean) => {
+    const { error } = await supabase.from("profiles").update({ is_active: !isActive }).eq("id", userId);
+    if (!error) {
+      setUsers(users.map(u => u.id === userId ? { ...u, is_active: !isActive } : u));
+      toast({ title: `Utilisateur ${!isActive ? 'activé' : 'désactivé'}` });
     }
   };
 
@@ -115,6 +126,40 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const handleEditName = (user: User) => {
+    setEditingUserId(user.id);
+    setEditingName(user.display_name);
+  };
+
+  const handleSaveName = async (user: User) => {
+    if (editingName.trim() && editingName !== user.display_name) {
+      const { error } = await supabase.from("profiles").update({ display_name: editingName.trim() }).eq("id", user.id);
+      if (!error) {
+        setUsers(users.map(u => u.id === user.id ? { ...u, display_name: editingName.trim() } : u));
+        toast({ title: "Nom modifié" });
+      }
+    }
+    setEditingUserId(null);
+    setEditingName("");
+  };
+
+  const handleAvatarChange = async (user: User, file: File) => {
+    // On suppose que tu as un bucket 'avatars' dans Supabase Storage
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+    const { data, error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
+    if (error) {
+      toast({ title: "Erreur lors de l'upload de l'avatar", description: error.message, variant: "destructive" });
+      return;
+    }
+    const publicUrl = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
+    const { error: updateError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
+    if (!updateError) {
+      setUsers(users.map(u => u.id === user.id ? { ...u, avatar_url: publicUrl } : u));
+      toast({ title: "Photo de profil modifiée" });
+    }
+  };
+
   const filteredUsers = users.filter(
     (user) =>
       user.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -152,23 +197,58 @@ const AdminPanel: React.FC = () => {
                   <TableRow>
                     <TableHead>Utilisateur</TableHead>
                     <TableHead className="text-right">Administrateur</TableHead>
+                    <TableHead className="text-right">Actif</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="flex items-center gap-2">
-                        <img
-                          src={user.avatar_url || "/lio2.png"}
-                          alt={user.display_name}
-                          className="w-8 h-8 rounded-full"
-                        />
-                        <span>{user.display_name}</span>
+                        <div className="relative group">
+                          <img
+                            src={user.avatar_url || "/lio2.png"}
+                            alt={user.display_name}
+                            className="w-8 h-8 rounded-full object-cover border"
+                          />
+                          <label className="absolute bottom-0 right-0 bg-white rounded-full p-1 cursor-pointer shadow group-hover:opacity-100 opacity-0 transition-opacity" title="Modifier la photo">
+                            <Pencil className="w-4 h-4 text-gray-600" />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={e => {
+                                if (e.target.files && e.target.files[0]) handleAvatarChange(user, e.target.files[0]);
+                              }}
+                            />
+                          </label>
+                        </div>
+                        {editingUserId === user.id ? (
+                          <Input
+                            value={editingName}
+                            autoFocus
+                            className="w-40"
+                            onChange={e => setEditingName(e.target.value)}
+                            onBlur={() => handleSaveName(user)}
+                            onKeyDown={e => {
+                              if (e.key === "Enter") handleSaveName(user);
+                              if (e.key === "Escape") { setEditingUserId(null); setEditingName(""); }
+                            }}
+                          />
+                        ) : (
+                          <span className="cursor-pointer hover:underline" onClick={() => handleEditName(user)}>{user.display_name}</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <Switch
                           checked={user.is_admin}
                           onCheckedChange={() => toggleAdminStatus(user.id, user.is_admin)}
+                          disabled={user.id === currentUser?.id}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Switch
+                          checked={user.is_active}
+                          onCheckedChange={() => toggleUserActive(user.id, user.is_active)}
                           disabled={user.id === currentUser?.id}
                         />
                       </TableCell>

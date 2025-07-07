@@ -93,6 +93,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<void> => {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    // Vérification du statut actif dans la table profiles
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("id", data.user.id)
+      .single();
+    if (profileError) throw profileError;
+    if (profile && profile.is_active === false) {
+      // Déconnexion immédiate si jamais l'utilisateur est désactivé
+      await supabase.auth.signOut();
+      throw new Error("Votre compte a été désactivé par un administrateur.");
+    }
     setCurrentUser(data.user); // Set current user after login
     setIsAuthenticated(true);
   };
