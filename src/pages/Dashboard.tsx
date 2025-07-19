@@ -429,6 +429,26 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Ajout de la fonction utilitaire pour vérifier la disponibilité d'une date
+  function isDateDisponible(date: Date): boolean {
+    const today = startOfDay(new Date());
+    const maxDate = new Date(today);
+    let added = 0;
+    while (added < 7) {
+      maxDate.setDate(maxDate.getDate() + 1);
+      if (maxDate.getDay() !== 0 && maxDate.getDay() !== 6) {
+        added++;
+      }
+    }
+    // Ici tu peux ajouter d'autres règles (fériés, jours complets, etc.)
+    return (
+      !isBefore(startOfDay(date), today) &&
+      !isAfter(startOfDay(date), maxDate) &&
+      date.getDay() !== 0 &&
+      date.getDay() !== 6
+    );
+  }
+
   return (
     <div className="h-full flex flex-col grow gap-2 bg-background">
       <Header />
@@ -441,13 +461,25 @@ const Dashboard: React.FC = () => {
                 variant="outline"
                 size="icon"
                 onClick={() => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setDate(newDate.getDate() - 1);
-                  if (!isBefore(startOfDay(newDate), startOfDay(new Date()))) {
-                    setSelectedDate(newDate);
-                  }
+                  let newDate = new Date(selectedDate);
+                  let essais = 0;
+                  do {
+                    newDate.setDate(newDate.getDate() - 1);
+                    essais++;
+                    if (essais > 31) break;
+                  } while (!isDateDisponible(newDate));
+                  setSelectedDate(newDate);
                 }}
-                disabled={isBefore(startOfDay(selectedDate), startOfDay(new Date()))}
+                disabled={(() => {
+                  let testDate = new Date(selectedDate);
+                  let essais = 0;
+                  do {
+                    testDate.setDate(testDate.getDate() - 1);
+                    essais++;
+                    if (essais > 31) return true;
+                  } while (!isDateDisponible(testDate));
+                  return false;
+                })()}
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -474,23 +506,7 @@ const Dashboard: React.FC = () => {
                       }
                     }}
                     className="rounded-md border"
-                    disabled={(date) => {
-                      const today = startOfDay(new Date());
-                      const maxDate = new Date(today);
-                      let added = 0;
-                      while (added < 7) {
-                        maxDate.setDate(maxDate.getDate() + 1);
-                        // Si c'est un jour ouvrable (lundi à vendredi)
-                        if (maxDate.getDay() !== 0 && maxDate.getDay() !== 6) {
-                          added++;
-                        }
-                      }
-                      return (
-                        isBefore(startOfDay(date), today) ||
-                        isAfter(startOfDay(date), maxDate) ||
-                        date.getDay() === 0 || date.getDay() === 6 // désactive samedi/dimanche
-                      );
-                    }}
+                    disabled={(date) => !isDateDisponible(date)}
                     locale={fr}
                   />
                 </PopoverContent>
@@ -499,37 +515,24 @@ const Dashboard: React.FC = () => {
                 variant="outline"
                 size="icon"
                 onClick={() => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setDate(newDate.getDate() + 1);
-                  
-                  // Vérifier si la nouvelle date est dans la limite des 7 jours ouvrables
-                  const today = startOfDay(new Date());
-                  const maxDate = new Date(today);
-                  let added = 0;
-                  while (added < 7) {
-                    maxDate.setDate(maxDate.getDate() + 1);
-                    // Si c'est un jour ouvrable (lundi à vendredi)
-                    if (maxDate.getDay() !== 0 && maxDate.getDay() !== 6) {
-                      added++;
-                    }
-                  }
-                  
-                  // Ne mettre à jour la date que si elle est dans les limites
-                  if (!isAfter(startOfDay(newDate), maxDate) && newDate.getDay() !== 0 && newDate.getDay() !== 6) {
-                    setSelectedDate(newDate);
-                  }
+                  let newDate = new Date(selectedDate);
+                  let essais = 0;
+                  do {
+                    newDate.setDate(newDate.getDate() + 1);
+                    essais++;
+                    if (essais > 31) break;
+                  } while (!isDateDisponible(newDate));
+                  setSelectedDate(newDate);
                 }}
                 disabled={(() => {
-                  const today = startOfDay(new Date());
-                  const maxDate = new Date(today);
-                  let added = 0;
-                  while (added < 7) {
-                    maxDate.setDate(maxDate.getDate() + 1);
-                    if (maxDate.getDay() !== 0 && maxDate.getDay() !== 6) {
-                      added++;
-                    }
-                  }
-                  return isAfter(startOfDay(selectedDate), maxDate) || selectedDate.getDay() === 5; // Désactive le bouton si on est vendredi
+                  let testDate = new Date(selectedDate);
+                  let essais = 0;
+                  do {
+                    testDate.setDate(testDate.getDate() + 1);
+                    essais++;
+                    if (essais > 31) return true;
+                  } while (!isDateDisponible(testDate));
+                  return false;
                 })()}
               >
                 <ArrowRight className="h-4 w-4" />
