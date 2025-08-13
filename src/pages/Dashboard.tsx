@@ -633,7 +633,6 @@ const Dashboard: React.FC = () => {
             <TabsList className="flex gap-1 h-6 w-fit">
               <TabsTrigger value="bureaux" className="text-xs py-0 px-1">Bureaux</TabsTrigger>
               <TabsTrigger value="parking" className="text-xs py-0 px-1">Parking</TabsTrigger>
-              <TabsTrigger value="baby" className="text-xs py-0 px-1">Baby</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -838,81 +837,7 @@ const Dashboard: React.FC = () => {
                     );
                   })}
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full justify-items-center items-center min-h-[calc(100vh-200px)] py-8">
-                  {Array.from({ length: 4 }, (_, i) => {
-                    const spotId = `place_baby_${i + 1}`;
-                    const spotReservation = reservations.find(r => 
-                      r.resource_id === spotId && 
-                      r.date === format(selectedDate, "yyyy-MM-dd")
-                    );
-                    const isMyReservation = spotReservation?.user_id === currentUser?.id;
-                    const resource = resources.find(r => r.id === spotId);
-                    const isActive = resource?.is_active ?? true;
-
-                    return (
-                      <div
-                        key={spotId}
-                        className={`p-6 rounded-lg text-center h-[220px] w-[220px] flex flex-col justify-between items-center ${
-                          !isActive
-                            ? "bg-destructive/10 text-destructive"
-                            : spotReservation
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-green-500/10 text-green-500"
-                        }`}
-                      >
-                        <p className="font-medium text-xl mt-4">Place Baby {i + 1}</p>
-                        {!isActive ? (
-                          <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
-                            <p className="text-sm text-center break-words w-full">
-                              Place désactivée
-                            </p>
-                            {resource?.block_reason && (
-                              <p className="text-sm text-center break-words w-full">
-                                Raison : {resource.block_reason}
-                              </p>
-                            )}
-                            {resource?.block_until && (
-                              <p className="text-sm text-center break-words w-full">
-                                Jusqu'au : {format(new Date(resource.block_until), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
-                              </p>
-                            )}
-                          </div>
-                        ) : spotReservation ? (
-                          <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
-                            <img
-                              src={spotReservation.profiles?.avatar_url || "/lio2.png"}
-                              alt="Profile"
-                              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                            />
-                            <p className="text-sm text-center break-words w-full">
-                              {isMyReservation ? "Réservée par vous" : `Réservée par ${spotReservation.profiles?.display_name || "un utilisateur"}`}
-                            </p>
-                            {(isMyReservation || isAdmin) && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleCancelReservation(spotReservation)}
-                              >
-                                {isAdmin && !isMyReservation ? "Annuler (Admin)" : "Annuler"}
-                              </Button>
-                            )}
-                          </div>
-                        ) : (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleReservation(spotId, selectedDate)}
-                            className="mb-4"
-                          >
-                            Réserver
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
