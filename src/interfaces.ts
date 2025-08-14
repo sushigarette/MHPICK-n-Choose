@@ -26,3 +26,30 @@ export type Resource = {
   block_reason?: string;
   block_until?: string;
 };
+
+export type Ticket = {
+  id: number;
+  user_id: string;
+  resource_id: string;
+  title: string;
+  message: string;
+  status: 'envoyé' | 'ouvert' | 'traité' | 'fermé';
+  priority: 'basse' | 'normal' | 'haute' | 'urgente';
+  admin_response?: string;
+  admin_response_date?: string;
+  admin_id?: string;
+  created_at: string;
+  updated_at: string;
+  profiles: {
+    display_name: string;
+    avatar_url: string;
+  };
+  admin_profiles?: {
+    display_name: string;
+    avatar_url: string;
+  };
+  resource: {
+    name: string;
+    type: string;
+  };
+};

@@ -16,7 +16,7 @@ import { useAuth } from "../context/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
 import WeatherWidget from "./WeatherWidget";
 import supabase from "@/supabase";
-import { Settings, LogOut, LayoutDashboard, User, Calendar, BarChart2 } from "lucide-react";
+import { Settings, LogOut, LayoutDashboard, User, Calendar, BarChart2, MessageSquare, AlertTriangle } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 const Header: React.FC = () => {
@@ -153,6 +153,14 @@ const Header: React.FC = () => {
                       <Calendar className="mr-2 h-4 w-4" />
                       <span>Mes réservations</span>
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/mes-signalements")}>
+                      <BarChart2 className="mr-2 h-4 w-4" />
+                      <span>Mes signalements TT</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/mes-tickets")}>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      <span>Mes tickets</span>
+                    </DropdownMenuItem>
                     {isAdmin && (
                       <>
                         <DropdownMenuSeparator />
@@ -164,12 +172,12 @@ const Header: React.FC = () => {
                           <BarChart2 className="mr-2 h-4 w-4" />
                           <span>Statistiques TT</span>
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate("/admin/tickets")}>
+                          <AlertTriangle className="mr-2 h-4 w-4" />
+                          <span>Gestion des tickets</span>
+                        </DropdownMenuItem>
                       </>
                     )}
-                    <DropdownMenuItem onClick={() => navigate("/mes-signalements")}>
-                      <BarChart2 className="mr-2 h-4 w-4" />
-                      <span>Mes signalements TT</span>
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />

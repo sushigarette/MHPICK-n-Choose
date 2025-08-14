@@ -14,6 +14,7 @@ interface ReservationModalProps {
   selectedDate: Date;
   onConfirm: (resourceId: string, date: Date, startTime: string, endTime: string) => void;
   onCancelReservation: (reservation: Reservation) => void;
+  onReportIssue?: (resource: Resource) => void;
 }
 
 const ReservationModal = ({
@@ -23,6 +24,7 @@ const ReservationModal = ({
   selectedDate,
   onConfirm,
   onCancelReservation,
+  onReportIssue,
 }: ReservationModalProps) => {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
@@ -40,7 +42,7 @@ const ReservationModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {resource.type === "desk" ? "Bureau" : resource.type === "room" ? "Salle" : "Ressource"} {resource.id.replace(/^(bureau_flex_|salle_reunion_)/, "")}
@@ -65,7 +67,19 @@ const ReservationModal = ({
                 </p>
               )}
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+              {onReportIssue && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    onReportIssue(resource);
+                    onClose();
+                  }}
+                  className="w-full sm:w-auto border-orange-500 text-orange-600 hover:bg-orange-50"
+                >
+                  Signaler un problème
+                </Button>
+              )}
               <Button variant="outline" onClick={onClose}>
                 Fermer
               </Button>
@@ -89,7 +103,19 @@ const ReservationModal = ({
                 </p>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+              {onReportIssue && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    onReportIssue(resource);
+                    onClose();
+                  }}
+                  className="w-full sm:w-auto border-orange-500 text-orange-600 hover:bg-orange-50"
+                >
+                  Signaler un problème
+                </Button>
+              )}
               <Button variant="outline" onClick={onClose}>
                 Fermer
               </Button>
@@ -148,7 +174,19 @@ const ReservationModal = ({
                 </div>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+              {onReportIssue && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    onReportIssue(resource);
+                    onClose();
+                  }}
+                  className="w-full sm:w-auto border-orange-500 text-orange-600 hover:bg-orange-50"
+                >
+                  Signaler un problème
+                </Button>
+              )}
               <Button variant="outline" onClick={onClose}>
                 Annuler
               </Button>

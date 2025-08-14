@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import ReservationModal from "../components/ReservationModal";
+import TicketModal from "../components/TicketModal";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, isBefore, isToday, isAfter } from "date-fns";
@@ -25,9 +26,12 @@ const Dashboard: React.FC = () => {
   const [resources, setResources] = useState<Resource[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [activeTab, setActiveTab] = useState<string>("bureaux");
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [resourceForTicket, setResourceForTicket] = useState<Resource | null>(null);
+
   const { currentUser } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -361,6 +365,12 @@ const Dashboard: React.FC = () => {
         variant: "destructive",
       });
     }
+  };
+
+
+  const handleReportIssue = (resource: Resource) => {
+    setResourceForTicket(resource);
+    setShowTicketModal(true);
   };
 
   // Fonction pour créer des réservations de test
@@ -851,6 +861,22 @@ const Dashboard: React.FC = () => {
           selectedDate={selectedDate}
           onConfirm={handleReservation}
           onCancelReservation={handleCancelReservation}
+          onReportIssue={handleReportIssue}
+        />
+      )}
+
+
+      {resourceForTicket && (
+        <TicketModal
+          isOpen={showTicketModal}
+          onClose={() => {
+            setShowTicketModal(false);
+            setResourceForTicket(null);
+          }}
+          resource={resourceForTicket}
+          onTicketCreated={() => {
+            // Optionnel : rafraîchir les données si nécessaire
+          }}
         />
       )}
 

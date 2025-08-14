@@ -200,6 +200,8 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
                       </text>
                     </g>
                   )}
+                  
+
                 </g>
               </TooltipTrigger>
               {!resource.is_active ? (
