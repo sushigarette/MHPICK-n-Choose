@@ -1,5 +1,5 @@
 import Lottie from "lottie-react";
-import spinAnimation from "../spin.json";
+import catAnimation from "../cat.json";
 import { useEffect, useState } from "react";
 
 const Loading = () => {
@@ -18,7 +18,7 @@ const Loading = () => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-100">
       <div className="w-[200px] h-[200px]">
-        <Lottie animationData={spinAnimation} loop={true} />
+        <Lottie animationData={catAnimation} loop={true} />
       </div>
     </div>
   );
