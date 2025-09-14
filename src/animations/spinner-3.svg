@@ -1,0 +1,14 @@
+<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <rect x="18" y="2" width="4" height="8" fill="currentColor" rx="2">
+    <animateTransform attributeName="transform" type="rotate" values="0 20 20;360 20 20" dur="1s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="18" y="30" width="4" height="8" fill="currentColor" rx="2">
+    <animateTransform attributeName="transform" type="rotate" values="0 20 20;360 20 20" dur="1s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="2" y="18" width="8" height="4" fill="currentColor" rx="2">
+    <animateTransform attributeName="transform" type="rotate" values="0 20 20;360 20 20" dur="1s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="30" y="18" width="8" height="4" fill="currentColor" rx="2">
+    <animateTransform attributeName="transform" type="rotate" values="0 20 20;360 20 20" dur="1s" repeatCount="indefinite"/>
+  </rect>
+</svg>

@@ -48,6 +48,11 @@ const Dashboard: React.FC = () => {
   });
   const [showSnakeGame, setShowSnakeGame] = useState(false);
 
+  // Fonction utilitaire pour vérifier les chevauchements d'horaires
+  const hasTimeOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
+    return start1 < end2 && end1 > start2;
+  };
+
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -247,7 +252,7 @@ const Dashboard: React.FC = () => {
         return;
       }
 
-      // Step 1: Check for existing reservations
+      // Step 1: Check for existing reservations with time overlap
       const { data: existingReservations, error: checkError } = await supabase
         .from("reservations")
         .select("*")
@@ -256,13 +261,20 @@ const Dashboard: React.FC = () => {
 
       if (checkError) throw checkError;
 
+      // Vérifier les chevauchements d'horaires
       if (existingReservations?.length) {
-        toast({
-          title: "Réservation impossible",
-          description: "Cette ressource est déjà réservée pour ces horaires.",
-          variant: "destructive",
-        });
-        return;
+        const hasTimeConflict = existingReservations.some(existingRes => 
+          hasTimeOverlap(startTime, endTime, existingRes.start_time, existingRes.end_time)
+        );
+
+        if (hasTimeConflict) {
+          toast({
+            title: "Réservation impossible",
+            description: "Cette ressource est déjà réservée pour ces horaires.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       // Step 2: Insert the reservation
