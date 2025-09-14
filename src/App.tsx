@@ -22,7 +22,6 @@ import MesSignalements from "./pages/MesSignalements";
 import ResetPassword from "./pages/ResetPassword";
 import MesTickets from "./pages/MesTickets";
 import AdminTickets from "./pages/AdminTickets";
-import InstallPrompt from "./components/InstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -95,7 +94,6 @@ const App = () => {
                 <Route path="/admin/tickets" element={<AdminRoute><AdminTickets /></AdminRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              <InstallPrompt />
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
