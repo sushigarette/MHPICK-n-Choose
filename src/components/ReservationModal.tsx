@@ -42,7 +42,7 @@ const ReservationModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[500px] mx-2">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {resource.type === "desk" ? "Bureau" : resource.type === "room" ? "Salle" : "Ressource"} {resource.id.replace(/^(bureau_flex_|salle_reunion_)/, "")}

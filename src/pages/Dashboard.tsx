@@ -460,10 +460,10 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col grow gap-2 bg-background w-full max-w-full overflow-x-hidden">
+    <div className="h-full flex flex-col grow gap-2 bg-background">
       <Header />
-      <div className="flex flex-col lg:flex-row grow gap-2 px-2 sm:px-4 w-full max-w-full">
-        <div className="flex gap-4 flex-col bg-card p-3 sm:p-6 rounded-lg shadow-md lg:max-w-md w-full">
+      <div className="flex flex-col md:flex-row grow gap-2">
+        <div className="flex gap-4 flex-col bg-card p-6 rounded-lg shadow-md md:max-w-md w-full">
           <h2 className="font-semibold">Visualisation pour le</h2>
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
@@ -638,11 +638,11 @@ const Dashboard: React.FC = () => {
           )}
         </div>
 
-        <div className="max-h-full grow flex flex-col bg-card p-3 sm:p-6 rounded-lg shadow-md w-full max-w-full overflow-hidden">
-          <Tabs defaultValue="bureaux" className="w-full mb-1" onValueChange={setActiveTab}>
-            <TabsList className="flex gap-1 h-8 w-full grid grid-cols-2">
-              <TabsTrigger value="bureaux" className="text-xs sm:text-sm py-1 px-2">Bureaux</TabsTrigger>
-              <TabsTrigger value="parking" className="text-xs sm:text-sm py-1 px-2">Parking</TabsTrigger>
+        <div className="max-h-full grow flex flex-col bg-card p-6 rounded-lg shadow-md">
+          <Tabs defaultValue="bureaux" className="w-fit mb-1 mx-auto" onValueChange={setActiveTab}>
+            <TabsList className="flex gap-1 h-6 w-fit">
+              <TabsTrigger value="bureaux" className="text-xs py-0 px-1">Bureaux</TabsTrigger>
+              <TabsTrigger value="parking" className="text-xs py-0 px-1">Parking</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -690,8 +690,8 @@ const Dashboard: React.FC = () => {
             </div>
           )}
 
-          <div className="max-h-full grow flex align-center justify-center overflow-x-auto w-full max-w-full">
-            <div className="max-h-full md:grow-0 grow shadow-md min-w-0 w-full max-w-full">
+          <div className="max-h-full grow flex align-center justify-center">
+            <div className="max-h-full md:grow-0 grow shadow-md">
               {activeTab === "bureaux" ? (
                 <PlanSVG
                   resources={resources}
