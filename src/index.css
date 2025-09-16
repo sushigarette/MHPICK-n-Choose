@@ -2,6 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Styles pour mobile et responsive */
+@layer base {
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+  
+  body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+  
+  /* Forcer le viewport sur mobile */
+  * {
+    box-sizing: border-box;
+  }
+  
+  /* Empêcher le zoom horizontal */
+  .container {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  /* Styles pour les éléments qui dépassent */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Forcer le responsive sur mobile */
+  @media (max-width: 768px) {
+    .container {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    
+    /* Empêcher le débordement horizontal */
+    * {
+      max-width: 100%;
+    }
+    
+    /* Forcer les éléments flex à se comporter correctement */
+    .flex {
+      flex-wrap: wrap;
+    }
+    
+    /* Ajuster les tailles de police pour mobile */
+    .text-xs {
+      font-size: 0.75rem;
+    }
+    
+    .text-sm {
+      font-size: 0.875rem;
+    }
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

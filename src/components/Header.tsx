@@ -52,10 +52,10 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="w-full bg-background border-b border-border">
-      <div className="w-full px-6 relative">
-        <div className="py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-6">
+    <header className="w-full bg-background border-b border-border max-w-full overflow-x-hidden">
+      <div className="w-full px-2 sm:px-6 relative max-w-full">
+        <div className="py-2 sm:py-4 flex justify-between items-center w-full max-w-full">
+          <div className="flex items-center space-x-2 sm:space-x-6 flex-shrink-0 min-w-0">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -63,12 +63,12 @@ const Header: React.FC = () => {
               className="flex items-center space-x-2"
             >
               <img 
-                className="h-12 cursor-pointer dark:invert" 
+                className="h-8 sm:h-12 cursor-pointer dark:invert" 
                 src={"/logomhp.png"}
                 onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=2+Imp.+Boudeville,+31100+Toulouse', '_blank')}
               />
               <span 
-                className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text cursor-pointer"
+                className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text cursor-pointer whitespace-nowrap"
                 onClick={() => navigate("/dashboard")}
               >
                 MHPick
@@ -76,9 +76,9 @@ const Header: React.FC = () => {
             </motion.div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {isAuthenticated && onlineUsers.length > 0 && (
-              <div className="hidden md:flex items-center gap-1">
+              <div className="hidden lg:flex items-center gap-1">
                 <span className="text-xs text-muted-foreground whitespace-nowrap">En ligne:</span>
                 <div className="flex items-center gap-1">
                   {onlineUsers.slice(0, 4).map(user => (
@@ -191,16 +191,16 @@ const Header: React.FC = () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5 }}
-                className="flex items-center space-x-4"
+                className="flex items-center space-x-1 sm:space-x-4 flex-shrink-0"
               >
-                <Button variant="ghost" onClick={() => navigate("/login")}>
+                <Button variant="ghost" onClick={() => navigate("/login")} className="text-sm whitespace-nowrap">
                   Connexion
                 </Button>
-                <Button onClick={() => navigate("/register")}>S'inscrire</Button>
+                <Button onClick={() => navigate("/register")} className="text-sm whitespace-nowrap">S'inscrire</Button>
               </motion.div>
             )}
             {/* Météo centrée en absolu sur desktop uniquement */}
-            <div className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <WeatherWidget />
             </div>
           </div>
