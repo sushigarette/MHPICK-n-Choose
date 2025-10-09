@@ -3,6 +3,7 @@
   "short_name": "MHPICK",
   "start_url": ".",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "description": "Réservation de bureaux, salles, parking et babyfoot",

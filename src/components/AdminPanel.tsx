@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useHalloween } from "@/context/HalloweenContext";
 import supabase from "@/supabase";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -40,22 +41,186 @@ interface Resource {
 const AdminPanel: React.FC = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const { isHalloweenMode } = useHalloween();
   const [users, setUsers] = useState<User[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<'users' | 'resources'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'resources' | 'theme'>('users');
   const [resourceTypeFilter, setResourceTypeFilter] = useState<string>("all");
   const [resourceSearch, setResourceSearch] = useState("");
   const [resourceStatusFilter, setResourceStatusFilter] = useState<string>("all");
   const [blockEdit, setBlockEdit] = useState<{[id: string]: {reason: string, until: string}}>({});
   const [datePickerOpen, setDatePickerOpen] = useState<{[id: string]: boolean}>({});
+  const [globalHalloweenMode, setGlobalHalloweenMode] = useState<boolean>(false);
+  const [halloweenRandomAudio, setHalloweenRandomAudio] = useState<boolean>(true);
+  const [halloweenStormAudio, setHalloweenStormAudio] = useState<boolean>(true);
+  const [halloweenStormVisual, setHalloweenStormVisual] = useState<boolean>(true);
+  const [halloweenRain, setHalloweenRain] = useState<boolean>(true);
+  const [halloweenSurprise, setHalloweenSurprise] = useState<boolean>(true);
+  const [halloweenParticles, setHalloweenParticles] = useState<boolean>(false);
+  const [halloweenFlyingBats, setHalloweenFlyingBats] = useState<boolean>(true);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>("");
 
   useEffect(() => {
     fetchUsers();
     fetchResources();
+    fetchGlobalTheme();
   }, []);
+
+  const fetchGlobalTheme = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('key, value')
+        .in('key', ['global_halloween_mode', 'halloween_random_audio', 'halloween_storm_audio', 'halloween_storm_visual', 'halloween_rain', 'halloween_surprise', 'halloween_particles', 'halloween_flying_bats']);
+      
+      if (error) {
+        console.error('Erreur lors du chargement des paramètres:', error);
+        return;
+      }
+      
+      // Traiter les résultats
+      data.forEach(setting => {
+        const value = setting.value === 'true';
+        switch (setting.key) {
+          case 'global_halloween_mode':
+            setGlobalHalloweenMode(value);
+            break;
+          case 'halloween_random_audio':
+            setHalloweenRandomAudio(value);
+            break;
+          case 'halloween_storm_audio':
+            setHalloweenStormAudio(value);
+            break;
+          case 'halloween_storm_visual':
+            setHalloweenStormVisual(value);
+            break;
+          case 'halloween_rain':
+            setHalloweenRain(value);
+            break;
+          case 'halloween_surprise':
+            setHalloweenSurprise(value);
+            break;
+          case 'halloween_particles':
+            setHalloweenParticles(value);
+            break;
+          case 'halloween_flying_bats':
+            setHalloweenFlyingBats(value);
+            break;
+        }
+      });
+    } catch (error) {
+      console.error('Erreur lors du chargement des paramètres:', error);
+    }
+  };
+
+  const updateSetting = async (key: string, value: boolean, setter: (value: boolean) => void, successMessage: string) => {
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .update({
+          value: value.toString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('key', key);
+      
+      if (error) {
+        console.error(`Erreur lors de la mise à jour de ${key}:`, error);
+        toast({
+          title: "Erreur",
+          description: `Impossible de mettre à jour le paramètre ${key}`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setter(value);
+      toast({
+        title: "Paramètre mis à jour",
+        description: successMessage,
+      });
+    } catch (error) {
+      console.error(`Erreur lors de la mise à jour de ${key}:`, error);
+      toast({
+        title: "Erreur",
+        description: `Impossible de mettre à jour le paramètre ${key}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateGlobalTheme = (enabled: boolean) => {
+    updateSetting(
+      'global_halloween_mode',
+      enabled,
+      setGlobalHalloweenMode,
+      enabled ? "Le thème Halloween est maintenant activé pour tout le site" : "Le thème Halloween est maintenant désactivé"
+    );
+  };
+
+  const updateRandomAudio = (enabled: boolean) => {
+    updateSetting(
+      'halloween_random_audio',
+      enabled,
+      setHalloweenRandomAudio,
+      enabled ? "Les sons aléatoires Halloween sont activés" : "Les sons aléatoires Halloween sont désactivés"
+    );
+  };
+
+  const updateStormAudio = (enabled: boolean) => {
+    updateSetting(
+      'halloween_storm_audio',
+      enabled,
+      setHalloweenStormAudio,
+      enabled ? "L'audio d'orage Halloween est activé" : "L'audio d'orage Halloween est désactivé"
+    );
+  };
+
+  const updateStormVisual = (enabled: boolean) => {
+    updateSetting(
+      'halloween_storm_visual',
+      enabled,
+      setHalloweenStormVisual,
+      enabled ? "Les effets visuels d'orage sont activés" : "Les effets visuels d'orage sont désactivés"
+    );
+  };
+
+  const updateRain = (enabled: boolean) => {
+    updateSetting(
+      'halloween_rain',
+      enabled,
+      setHalloweenRain,
+      enabled ? "La pluie Halloween est activée" : "La pluie Halloween est désactivée"
+    );
+  };
+
+  const updateSurprise = (enabled: boolean) => {
+    updateSetting(
+      'halloween_surprise',
+      enabled,
+      setHalloweenSurprise,
+      enabled ? "Les images surprises sont activées" : "Les images surprises sont désactivées"
+    );
+  };
+
+  const updateParticles = (enabled: boolean) => {
+    updateSetting(
+      'halloween_particles',
+      enabled,
+      setHalloweenParticles,
+      enabled ? "Les chauves-souris émojis sont activées" : "Les chauves-souris émojis sont désactivées"
+    );
+  };
+
+  const updateFlyingBats = (enabled: boolean) => {
+    updateSetting(
+      'halloween_flying_bats',
+      enabled,
+      setHalloweenFlyingBats,
+      enabled ? "Les chauves-souris animées sont activées" : "Les chauves-souris animées sont désactivées"
+    );
+  };
 
   const fetchUsers = async () => {
     const { data, error } = await supabase
@@ -172,17 +337,34 @@ const AdminPanel: React.FC = () => {
       <div className="container mx-auto p-6">
         <div className="bg-card p-6 rounded-lg shadow-md">
           <div className="flex gap-4 mb-8">
-            <Button variant={activeTab === 'users' ? 'default' : 'outline'} onClick={() => setActiveTab('users')}>
-              Gestion des utilisateurs
+            <Button 
+              variant={activeTab === 'users' ? 'default' : 'outline'} 
+              onClick={() => setActiveTab('users')}
+              className={isHalloweenMode ? 'halloween-glow' : ''}
+            >
+              {isHalloweenMode ? '👥 Gestion des utilisateurs 👻' : 'Gestion des utilisateurs'}
             </Button>
-            <Button variant={activeTab === 'resources' ? 'default' : 'outline'} onClick={() => setActiveTab('resources')}>
-              Gestion des ressources
+            <Button 
+              variant={activeTab === 'resources' ? 'default' : 'outline'} 
+              onClick={() => setActiveTab('resources')}
+              className={isHalloweenMode ? 'halloween-glow' : ''}
+            >
+              {isHalloweenMode ? '🏢 Gestion des ressources 🎃' : 'Gestion des ressources'}
+            </Button>
+            <Button 
+              variant={activeTab === 'theme' ? 'default' : 'outline'} 
+              onClick={() => setActiveTab('theme')}
+              className={isHalloweenMode ? 'halloween-glow' : ''}
+            >
+              {isHalloweenMode ? '🎨 Thème du site 🎃' : 'Thème du site'}
             </Button>
           </div>
 
           {activeTab === 'users' && (
             <>
-              <h1 className="text-2xl font-bold mb-6">Gestion des administrateurs</h1>
+              <h1 className={`text-2xl font-bold mb-6 ${isHalloweenMode ? 'halloween-spooky' : ''}`}>
+                {isHalloweenMode ? '👻 Gestion des administrateurs 🦇' : 'Gestion des administrateurs'}
+              </h1>
               <div className="mb-6">
                 <Input
                   type="text"
@@ -261,7 +443,9 @@ const AdminPanel: React.FC = () => {
 
           {activeTab === 'resources' && (
             <>
-              <h2 className="text-2xl font-bold mb-6">Gestion des ressources</h2>
+              <h2 className={`text-2xl font-bold mb-6 ${isHalloweenMode ? 'halloween-spooky' : ''}`}>
+                {isHalloweenMode ? '🎃 Gestion des ressources 👻' : 'Gestion des ressources'}
+              </h2>
               <div className="mb-4 flex flex-col md:flex-row gap-4 items-center">
                 <div className="flex gap-2 items-center">
                   <label htmlFor="resourceTypeFilter">Type :</label>
@@ -379,6 +563,207 @@ const AdminPanel: React.FC = () => {
                     ))}
                 </TableBody>
               </Table>
+            </>
+          )}
+
+          {activeTab === 'theme' && (
+            <>
+              <h2 className={`text-2xl font-bold mb-6 ${isHalloweenMode ? 'halloween-spooky' : ''}`}>
+                {isHalloweenMode ? '🎨 Configuration du thème du site 🎃' : 'Configuration du thème du site'}
+              </h2>
+              
+              <div className="bg-card p-6 rounded-lg border">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      {isHalloweenMode ? '🎃 Mode Halloween Global 👻' : 'Mode Halloween Global'}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {isHalloweenMode 
+                        ? '🎭 Activez ou désactivez le thème Halloween pour tous les utilisateurs du site 👻'
+                        : 'Activez ou désactivez le thème Halloween pour tous les utilisateurs du site'
+                      }
+                    </p>
+                  </div>
+                  <Switch
+                    checked={globalHalloweenMode}
+                    onCheckedChange={updateGlobalTheme}
+                    className={isHalloweenMode ? 'halloween-glow' : ''}
+                  />
+                </div>
+
+                {/* Contrôles individuels des effets */}
+                {globalHalloweenMode && (
+                  <div className="space-y-4 border-t pt-6">
+                    <h4 className="text-md font-semibold mb-4">
+                      {isHalloweenMode ? '🎛️ Contrôles des effets Halloween 🎨' : 'Contrôles des effets Halloween'}
+                    </h4>
+                    
+                    {/* Audio aléatoire */}
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div>
+                        <h5 className="font-medium">
+                          {isHalloweenMode ? '🔊 Sons aléatoires 👻' : 'Sons aléatoires'}
+                        </h5>
+                        <p className="text-sm text-muted-foreground">
+                          {isHalloweenMode 
+                            ? '🎵 Chouette, hibou, rire effrayant toutes les 1-2 minutes 🦉'
+                            : 'Chouette, hibou, rire effrayant toutes les 1-2 minutes'
+                          }
+                        </p>
+                      </div>
+                      <Switch
+                        checked={halloweenRandomAudio}
+                        onCheckedChange={updateRandomAudio}
+                        className={isHalloweenMode ? 'halloween-glow' : ''}
+                      />
+                    </div>
+
+                    {/* Audio d'orage */}
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div>
+                        <h5 className="font-medium">
+                          {isHalloweenMode ? '⛈️ Audio d\'orage 🌩️' : 'Audio d\'orage'}
+                        </h5>
+                        <p className="text-sm text-muted-foreground">
+                          {isHalloweenMode 
+                            ? '🔊 Son d\'orage synchronisé avec les effets visuels ⛈️'
+                            : 'Son d\'orage synchronisé avec les effets visuels'
+                          }
+                        </p>
+                      </div>
+                      <Switch
+                        checked={halloweenStormAudio}
+                        onCheckedChange={updateStormAudio}
+                        className={isHalloweenMode ? 'halloween-glow' : ''}
+                      />
+                    </div>
+
+                    {/* Effets visuels d'orage */}
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div>
+                        <h5 className="font-medium">
+                          {isHalloweenMode ? '⚡ Effets visuels d\'orage 🌧️' : 'Effets visuels d\'orage'}
+                        </h5>
+                        <p className="text-sm text-muted-foreground">
+                          {isHalloweenMode 
+                            ? '✨ Éclairs, pluie intense, overlay violet ⛈️'
+                            : 'Éclairs, pluie intense, overlay violet'
+                          }
+                        </p>
+                      </div>
+                      <Switch
+                        checked={halloweenStormVisual}
+                        onCheckedChange={updateStormVisual}
+                        className={isHalloweenMode ? 'halloween-glow' : ''}
+                      />
+                    </div>
+
+                    {/* Pluie normale */}
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div>
+                        <h5 className="font-medium">
+                          {isHalloweenMode ? '🌧️ Pluie normale 💧' : 'Pluie normale'}
+                        </h5>
+                        <p className="text-sm text-muted-foreground">
+                          {isHalloweenMode 
+                            ? '💧 Pluie continue en arrière-plan 🌧️'
+                            : 'Pluie continue en arrière-plan'
+                          }
+                        </p>
+                      </div>
+                      <Switch
+                        checked={halloweenRain}
+                        onCheckedChange={updateRain}
+                        className={isHalloweenMode ? 'halloween-glow' : ''}
+                      />
+                    </div>
+
+                    {/* Images surprises */}
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div>
+                        <h5 className="font-medium">
+                          {isHalloweenMode ? '👻 Images surprises 😱' : 'Images surprises'}
+                        </h5>
+                        <p className="text-sm text-muted-foreground">
+                          {isHalloweenMode 
+                            ? '🖼️ Images qui apparaissent brusquement toutes les 10-30 secondes 👻'
+                            : 'Images qui apparaissent brusquement toutes les 10-30 secondes'
+                          }
+                        </p>
+                      </div>
+                      <Switch
+                        checked={halloweenSurprise}
+                        onCheckedChange={updateSurprise}
+                        className={isHalloweenMode ? 'halloween-glow' : ''}
+                      />
+                    </div>
+
+                    {/* Chauves-souris émojis */}
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div>
+                        <h5 className="font-medium">
+                          {isHalloweenMode ? '🦇 Chauves-souris émojis 🦇' : 'Chauves-souris émojis'}
+                        </h5>
+                        <p className="text-sm text-muted-foreground">
+                          {isHalloweenMode 
+                            ? '🦇 Chauves-souris émojis qui volent (différentes des bulles animées) 🦇'
+                            : 'Chauves-souris émojis qui volent (différentes des bulles animées)'
+                          }
+                        </p>
+                      </div>
+                      <Switch
+                        checked={halloweenParticles}
+                        onCheckedChange={updateParticles}
+                        className={isHalloweenMode ? 'halloween-glow' : ''}
+                      />
+                    </div>
+
+                    {/* Chauves-souris animées */}
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div>
+                        <h5 className="font-medium">
+                          {isHalloweenMode ? '🦇 Chauves-souris animées 🦇' : 'Chauves-souris animées'}
+                        </h5>
+                        <p className="text-sm text-muted-foreground">
+                          {isHalloweenMode 
+                            ? '🦇 Chauves-souris animées qui sautent de bas en haut 🦇'
+                            : 'Chauves-souris animées qui sautent de bas en haut'
+                          }
+                        </p>
+                      </div>
+                      <Switch
+                        checked={halloweenFlyingBats}
+                        onCheckedChange={updateFlyingBats}
+                        className={isHalloweenMode ? 'halloween-glow' : ''}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <h4 className="font-semibold mb-2">
+                    {isHalloweenMode ? '📋 État actuel :' : 'État actuel :'}
+                  </h4>
+                  <p className={`text-sm ${globalHalloweenMode ? 'text-green-600' : 'text-gray-600'}`}>
+                    {globalHalloweenMode 
+                      ? (isHalloweenMode ? '🎃 Le thème Halloween est activé pour tout le site 👻' : 'Le thème Halloween est activé pour tout le site')
+                      : (isHalloweenMode ? '🌙 Le thème normal est actif 🏠' : 'Le thème normal est actif')
+                    }
+                  </p>
+                </div>
+                
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <h4 className="font-semibold mb-2">
+                    {isHalloweenMode ? 'ℹ️ Information :' : 'Information :'}
+                  </h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• {isHalloweenMode ? '🎭 Le changement s\'applique immédiatement à tous les utilisateurs 👻' : 'Le changement s\'applique immédiatement à tous les utilisateurs'}</li>
+                    <li>• {isHalloweenMode ? '🎨 Les utilisateurs ne peuvent plus contrôler individuellement le thème 🎃' : 'Les utilisateurs ne peuvent plus contrôler individuellement le thème'}</li>
+                    <li>• {isHalloweenMode ? '🔊 L\'audio d\'ambiance Halloween sera également activé/désactivé 👻' : 'L\'audio d\'ambiance Halloween sera également activé/désactivé'}</li>
+                  </ul>
+                </div>
+              </div>
             </>
           )}
         </div>

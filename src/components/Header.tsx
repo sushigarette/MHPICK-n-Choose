@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../context/AuthContext";
+import { useHalloween } from "../context/HalloweenContext";
 import { ThemeToggle } from "./ThemeToggle";
+import HalloweenToggle from "./HalloweenToggle";
 import WeatherWidget from "./WeatherWidget";
 import supabase from "@/supabase";
 import { Settings, LogOut, LayoutDashboard, User, Calendar, BarChart2, MessageSquare, AlertTriangle } from "lucide-react";
@@ -23,6 +25,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, logout, displayName, avatarUrl, currentUser, isAdmin } = useAuth();
+  const { isHalloweenMode } = useHalloween();
   const [userEmail, setUserEmail] = useState("");
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
 
@@ -56,24 +59,40 @@ const Header: React.FC = () => {
       <div className="w-full px-6 relative">
         <div className="py-4 flex justify-between items-center">
           <div className="flex items-center space-x-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center space-x-2"
-            >
-              <img 
-                className="h-12 cursor-pointer dark:invert" 
-                src={"/logomhp.png"}
-                onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=2+Imp.+Boudeville,+31100+Toulouse', '_blank')}
-              />
-              <span 
-                className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text cursor-pointer"
-                onClick={() => navigate("/dashboard")}
+            {!isHalloweenMode ? (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex items-center space-x-2"
               >
-                MHPick
-              </span>
-            </motion.div>
+                <img 
+                  className="h-12 cursor-pointer dark:invert" 
+                  src={"/logomhp.png"}
+                  onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=2+Imp.+Boudeville,+31100+Toulouse', '_blank')}
+                />
+                <span 
+                  className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text cursor-pointer"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  MHPick
+                </span>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex items-center space-x-2"
+              >
+                <span 
+                  className="text-2xl font-bold halloween-neon-text cursor-pointer"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  🎃 MHPICK 👻
+                </span>
+              </motion.div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -120,6 +139,7 @@ const Header: React.FC = () => {
               </div>
             )}
             <ThemeToggle />
+            <HalloweenToggle />
             {isAuthenticated ? (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
                 <DropdownMenu>
