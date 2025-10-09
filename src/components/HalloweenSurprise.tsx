@@ -12,6 +12,7 @@ const HalloweenSurprise: React.FC = () => {
   const { isHalloweenMode, halloweenSurprise } = useHalloween();
   const [showSurprise, setShowSurprise] = useState(false);
   const [currentImage, setCurrentImage] = useState<SurpriseImage | null>(null);
+  const [lastSurpriseTime, setLastSurpriseTime] = useState<number>(0);
 
   // Liste des images surprises disponibles
   const surpriseImages: SurpriseImage[] = [
@@ -32,15 +33,22 @@ const HalloweenSurprise: React.FC = () => {
     if (!isHalloweenMode || !halloweenSurprise) {
       setShowSurprise(false);
       setCurrentImage(null);
+      setLastSurpriseTime(0);
       return;
     }
 
     // Fonction pour déclencher une surprise aléatoire
     const triggerSurprise = () => {
-      if (Math.random() < 0.3) { // 30% de chance
+      const now = Date.now();
+      const timeSinceLastSurprise = now - lastSurpriseTime;
+      const tenMinutes = 10 * 60 * 1000; // 10 minutes en millisecondes
+      
+      // Vérifier si au moins 10 minutes se sont écoulées depuis la dernière surprise
+      if (timeSinceLastSurprise >= tenMinutes) {
         const randomImage = surpriseImages[Math.floor(Math.random() * surpriseImages.length)];
         setCurrentImage(randomImage);
         setShowSurprise(true);
+        setLastSurpriseTime(now); // Mettre à jour le temps de la dernière surprise
 
         // Masquer l'image après sa durée
         setTimeout(() => {
@@ -49,20 +57,20 @@ const HalloweenSurprise: React.FC = () => {
       }
     };
 
-    // Déclencher une surprise immédiatement (petite chance)
-    if (Math.random() < 0.1) {
+    // Déclencher une surprise immédiatement (petite chance) seulement si c'est la première fois
+    if (lastSurpriseTime === 0 && Math.random() < 0.1) {
       triggerSurprise();
     }
 
-    // Déclencher des surprises aléatoirement toutes les 10-30 secondes
+    // Vérifier toutes les minutes si on peut déclencher une surprise
     const surpriseInterval = setInterval(() => {
       triggerSurprise();
-    }, Math.random() * 20000 + 10000); // Entre 10 et 30 secondes
+    }, 60000); // Vérification toutes les minutes
 
     return () => {
       clearInterval(surpriseInterval);
     };
-  }, [isHalloweenMode, halloweenSurprise]);
+  }, [isHalloweenMode, halloweenSurprise, lastSurpriseTime]);
 
   if (!isHalloweenMode || !showSurprise || !currentImage) {
     return null;
