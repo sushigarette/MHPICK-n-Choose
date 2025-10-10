@@ -84,7 +84,7 @@ const HalloweenGame: React.FC = () => {
           onClick={startGame}
           className="bg-orange-500 hover:bg-orange-600 text-white halloween-glow"
         >
-          🎃 Jeu Halloween
+          🎃 JOUE AVEC MOI
         </Button>
       )}
 

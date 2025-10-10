@@ -36,10 +36,7 @@ const HalloweenToggle: React.FC = () => {
       
       {/* Indicateur de statut - masqué sur mobile */}
       <div className="hidden md:block text-xs text-muted-foreground">
-        {!globalHalloweenMode 
-          ? '🌙 Normal' 
-          : ''
-        }
+        {/* Plus d'indicateur de statut */}
       </div>
     </div>
   );
