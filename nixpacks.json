@@ -1,0 +1,16 @@
+{
+  "providers": {
+    "node": "20"
+  },
+  "phases": {
+    "install": {
+      "cmds": ["npm ci"]
+    },
+    "build": {
+      "cmds": ["npm run build"]
+    }
+  },
+  "start": {
+    "cmd": "npm run preview"
+  }
+}
