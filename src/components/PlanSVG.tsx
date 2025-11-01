@@ -4,7 +4,6 @@ import { Resource } from "@/interfaces";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useHalloween } from "@/context/HalloweenContext";
 
 interface PlanSVGProps {
   resources: Resource[];
@@ -27,21 +26,10 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
   onAddResource,
   onDeleteResource,
 }) => {
-  const { isHalloweenMode } = useHalloween();
-  
   // Filtrer les ressources pour n'afficher que les bureaux et les salles
   const filteredResources = resources.filter(resource => 
     resource.type === "desk" || resource.type === "room"
   );
-
-  const getHalloweenEmoji = (type: string) => {
-    const emojis = {
-      desk: ["🦇", "🎃", "👻", "🕷️", "🕸️", "💀", "🧛", "🧙"],
-      room: ["🏰", "🌙", "⚰️", "🔮", "🦉", "🐺", "🧟", "👹"]
-    };
-    const typeEmojis = emojis[type as keyof typeof emojis] || emojis.desk;
-    return typeEmojis[Math.floor(Math.random() * typeEmojis.length)];
-  };
 
   const getClassName = (reservations: any[], type: string, isActive: boolean) => {
     if (!isActive) {
@@ -161,20 +149,6 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
                       clipPath="circle(32px at 32px 32px)"
                       onClick={() => onSelect(resource)}
                     />
-                  ) : isHalloweenMode ? (
-                    <motion.text
-                      id={resource.id}
-                      x={resource.cx}
-                      y={resource.cy + 8}
-                      fontSize="36"
-                      textAnchor="middle"
-                      className="cursor-pointer select-none"
-                      whileHover={{ scale: 1.2 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => onSelect(resource)}
-                    >
-                      {getHalloweenEmoji(resource.type)}
-                    </motion.text>
                   ) : (
                     <motion.ellipse
                       id={resource.id}

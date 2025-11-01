@@ -4,7 +4,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import { HalloweenProvider } from "./context/HalloweenContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -23,12 +22,6 @@ import MesSignalements from "./pages/MesSignalements";
 import ResetPassword from "./pages/ResetPassword";
 import MesTickets from "./pages/MesTickets";
 import AdminTickets from "./pages/AdminTickets";
-import HalloweenToggle from "./components/HalloweenToggle";
-import HalloweenEffects from "./components/HalloweenEffects";
-import HalloweenGame from "./components/HalloweenGame";
-import FlyingBats from "./components/FlyingBats";
-import HalloweenWeather from "./components/HalloweenWeather";
-import HalloweenSurprise from "./components/HalloweenSurprise";
 
 const queryClient = new QueryClient();
 
@@ -81,16 +74,10 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <HalloweenProvider>
-          <AuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <HalloweenEffects />
-              <HalloweenGame />
-              <HalloweenWeather />
-              <HalloweenSurprise />
-              <BrowserRouter>
-              <FlyingBats />
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
@@ -110,7 +97,6 @@ const App = () => {
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
-        </HalloweenProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
