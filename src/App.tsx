@@ -4,6 +4,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { NoelSettingsProvider } from "./context/NoelSettingsContext";
+import { Snow } from "./components/Snow";
+import { NoelAnimation } from "./components/NoelAnimation";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -73,31 +76,35 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
-                <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
-                <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />
-                <Route path="/parking" element={<PrivateRoute element={<Parking />} />} />
-                <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
-                <Route path="/admin/stats" element={<AdminRoute><AdminStats /></AdminRoute>} />
-                <Route path="/mes-signalements" element={<PrivateRoute element={<MesSignalements />} />} />
-                <Route path="/mes-tickets" element={<PrivateRoute element={<MesTickets />} />} />
-                <Route path="/admin/tickets" element={<AdminRoute><AdminTickets /></AdminRoute>} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <NoelSettingsProvider>
+          <ThemeProvider>
+            <Snow />
+            <NoelAnimation />
+            <TooltipProvider>
+              <Toaster />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
+                  <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
+                  <Route path="/reservations" element={<PrivateRoute element={<Reservations />} />} />
+                  <Route path="/parking" element={<PrivateRoute element={<Parking />} />} />
+                  <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
+                  <Route path="/admin/stats" element={<AdminRoute><AdminStats /></AdminRoute>} />
+                  <Route path="/mes-signalements" element={<PrivateRoute element={<MesSignalements />} />} />
+                  <Route path="/mes-tickets" element={<PrivateRoute element={<MesTickets />} />} />
+                  <Route path="/admin/tickets" element={<AdminRoute><AdminTickets /></AdminRoute>} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </NoelSettingsProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

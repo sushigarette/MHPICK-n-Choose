@@ -14,6 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../context/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
+import { NoelToggle } from "./NoelToggle";
 import WeatherWidget from "./WeatherWidget";
 import supabase from "@/supabase";
 import { Settings, LogOut, LayoutDashboard, User, Calendar, BarChart2, MessageSquare, AlertTriangle } from "lucide-react";
@@ -120,6 +121,7 @@ const Header: React.FC = () => {
               </div>
             )}
             <ThemeToggle />
+            <NoelToggle />
             {isAuthenticated ? (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
                 <DropdownMenu>

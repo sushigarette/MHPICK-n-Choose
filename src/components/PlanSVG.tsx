@@ -4,6 +4,7 @@ import { Resource } from "@/interfaces";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useNoelSettings } from "@/context/NoelSettingsContext";
 
 interface PlanSVGProps {
   resources: Resource[];
@@ -26,10 +27,30 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
   onAddResource,
   onDeleteResource,
 }) => {
+  const { settings } = useNoelSettings();
+  
   // Filtrer les ressources pour n'afficher que les bureaux et les salles
   const filteredResources = resources.filter(resource => 
     resource.type === "desk" || resource.type === "room"
   );
+
+  const getNoelEmoji = (reservations: any[], type: string, isActive: boolean) => {
+    if (!isActive) {
+      return "⚠️"; // Ressource désactivée
+    }
+    if (reservations?.length) {
+      return "❌"; // Réservé
+    }
+    // Disponible - différents emojis selon le type
+    switch (type) {
+      case "desk":
+        return "🎄"; // Sapin pour les bureaux
+      case "room":
+        return "🎁"; // Cadeau pour les salles
+      default:
+        return "⭐"; // Étoile par défaut
+    }
+  };
 
   const getClassName = (reservations: any[], type: string, isActive: boolean) => {
     if (!isActive) {
@@ -149,6 +170,21 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
                       clipPath="circle(32px at 32px 32px)"
                       onClick={() => onSelect(resource)}
                     />
+                  ) : settings.noel_theme_enabled ? (
+                    <motion.text
+                      id={resource.id}
+                      x={resource.cx}
+                      y={resource.cy}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize="48"
+                      style={{ cursor: "pointer" }}
+                      whileHover={{ scale: 1.3 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => onSelect(resource)}
+                    >
+                      {getNoelEmoji(resource.reservations, resource.type, resource.is_active ?? true)}
+                    </motion.text>
                   ) : (
                     <motion.ellipse
                       id={resource.id}
