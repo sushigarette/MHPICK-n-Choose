@@ -20,6 +20,8 @@ import PlanSVG from "@/components/PlanSVG";
 import { Reservation, Resource } from "@/interfaces";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import SnakeGame from "../components/SnakeGame";
+import ChristmasGame from "../components/ChristmasGame";
+import { useNoelSettings } from "@/context/NoelSettingsContext";
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
@@ -47,6 +49,10 @@ const Dashboard: React.FC = () => {
     baby: { total: 0, available: 0 }
   });
   const [showSnakeGame, setShowSnakeGame] = useState(false);
+  const [showChristmasGame, setShowChristmasGame] = useState(false);
+  const { settings: noelSettings } = useNoelSettings();
+  const noelDisabledForSession = typeof window !== 'undefined' ? sessionStorage.getItem('noel_disabled_session') === 'true' : false;
+  const isNoelActive = noelSettings.noel_theme_enabled && !noelDisabledForSession;
 
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
@@ -551,6 +557,18 @@ const Dashboard: React.FC = () => {
           </div>
           <Separator className="mb-2" />
 
+          {isNoelActive && (
+            <>
+              <Button
+                onClick={() => setShowChristmasGame(true)}
+                className="w-full bg-green-600 hover:bg-green-700 text-white mb-4"
+              >
+                🎮 Jouer au Jeu Christmas MHPick 🎄
+              </Button>
+              <Separator className="mb-2" />
+            </>
+          )}
+
           <h2 className="font-semibold">Légende</h2>
           <div className="flex flex-wrap gap-2">
             <div className="flex items-center">
@@ -884,6 +902,13 @@ const Dashboard: React.FC = () => {
         isOpen={showSnakeGame}
         onClose={() => setShowSnakeGame(false)}
       />
+
+      {isNoelActive && (
+        <ChristmasGame
+          isOpen={showChristmasGame}
+          onClose={() => setShowChristmasGame(false)}
+        />
+      )}
     </div>
   );
 };

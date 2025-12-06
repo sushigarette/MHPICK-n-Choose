@@ -283,6 +283,14 @@
   [data-noel-theme="true"][data-noel-background="true"] button.bg-primary:hover {
     background-color: hsl(var(--muted) / 0.8) !important;
   }
+
+  /* Annuler la transformation du logo en mode Noël */
+  [data-noel-theme="true"] header img[src*="logonoel.png"],
+  [data-noel-theme="true"] header img[src*="logomhp.png"] {
+    transform: none !important;
+    max-height: 3rem !important;
+    width: auto !important;
+  }
 }
 
 /* Mobile optimization */
