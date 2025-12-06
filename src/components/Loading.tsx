@@ -96,7 +96,7 @@ const Loading = () => {
         
         {/* Texte de chargement */}
         <div className="mt-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">
+          <h2 className="text-3xl font-bold text-gray-800 mb-2" style={{ fontFamily: "'FontNoel', sans-serif" }}>
             MHPICK
           </h2>
           <p className="text-gray-600 text-lg">

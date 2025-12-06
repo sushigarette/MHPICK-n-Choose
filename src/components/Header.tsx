@@ -55,7 +55,7 @@ const Header: React.FC = () => {
   return (
     <header className="w-full bg-background border-b border-border">
       <div className="w-full px-6 relative">
-        <div className="py-4 flex justify-between items-center">
+        <div className="py-2 flex justify-between items-center overflow-hidden">
           <div className="flex items-center space-x-6">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -64,16 +64,16 @@ const Header: React.FC = () => {
               className="flex items-center space-x-2"
             >
               <img 
-                className="h-12 cursor-pointer dark:invert" 
-                src={"/logomhp.png"}
+                className="h-12 cursor-pointer dark:invert object-contain" 
+                style={{ 
+                  transform: 'scale(3)',
+                  transformOrigin: 'left center',
+                  maxHeight: '64px',
+                  width: 'auto'
+                }}
+                src={"/logonoel.png"}
                 onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=2+Imp.+Boudeville,+31100+Toulouse', '_blank')}
               />
-              <span 
-                className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text cursor-pointer"
-                onClick={() => navigate("/dashboard")}
-              >
-                MHPick
-              </span>
             </motion.div>
           </div>
 
