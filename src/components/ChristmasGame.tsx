@@ -591,7 +591,11 @@ const ChristmasGame: React.FC<ChristmasGameProps> = ({ isOpen, onClose }) => {
         
         <div className="flex flex-col md:flex-row gap-4">
           {/* Zone de jeu */}
-          <div className="relative rounded-xl overflow-hidden border-4 border-white/50 shadow-2xl select-none w-full">
+          <div 
+            className="relative rounded-xl overflow-hidden border-4 border-white/50 shadow-2xl select-none w-full cursor-pointer touch-none"
+            onClick={handleClick}
+            onTouchStart={handleClick}
+          >
             <canvas
               ref={canvasRef}
               width={CANVAS_WIDTH}

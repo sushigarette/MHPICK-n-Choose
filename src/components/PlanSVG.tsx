@@ -178,8 +178,9 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
                       textAnchor="middle"
                       dominantBaseline="middle"
                       fontSize="48"
-                      style={{ cursor: "pointer" }}
-                      whileHover={{ scale: 1.3 }}
+                      style={{ cursor: "pointer", userSelect: "none" }}
+                      // Désactiver le scale au hover sur mobile pour éviter le tremblement
+                      whileHover={{ scale: window.matchMedia('(hover: hover)').matches ? 1.3 : 1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => onSelect(resource)}
                     >
