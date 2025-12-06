@@ -176,12 +176,10 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
                       x={resource.cx}
                       y={resource.cy}
                       textAnchor="middle"
-                      dominantBaseline="middle"
+                      dominantBaseline="central" // Changement de middle à central pour un meilleur alignement vertical
                       fontSize="48"
                       style={{ cursor: "pointer", userSelect: "none" }}
-                      // Désactiver le scale au hover sur mobile pour éviter le tremblement
-                      whileHover={{ scale: window.matchMedia('(hover: hover)').matches ? 1.3 : 1 }}
-                      whileTap={{ scale: 0.9 }}
+                      // Suppression totale des animations de scale pour éviter tout décalage
                       onClick={() => onSelect(resource)}
                     >
                       {getNoelEmoji(resource.reservations, resource.type, resource.is_active ?? true)}
