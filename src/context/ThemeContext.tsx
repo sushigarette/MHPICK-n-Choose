@@ -21,11 +21,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
     
+    // Vérifier si le thème de Noël est désactivé pour cette session
+    const noelDisabledForSession = sessionStorage.getItem('noel_disabled_session') === 'true';
+    const isNoelActive = settings.noel_theme_enabled && !noelDisabledForSession;
+    
     // Si le thème de Noël est activé globalement, forcer l'application de la classe noel
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark', 'noel');
     
-    if (settings.noel_theme_enabled) {
+    if (isNoelActive) {
       // Si le thème de Noël est activé, appliquer la classe noel en plus du thème actuel
       root.classList.add(theme === 'noel' ? 'noel' : theme, 'noel');
     } else {
@@ -39,7 +43,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
     
     // Ajouter des attributs data-* pour contrôler les styles CSS
-    root.setAttribute('data-noel-theme', settings.noel_theme_enabled ? 'true' : 'false');
+    root.setAttribute('data-noel-theme', isNoelActive ? 'true' : 'false');
     root.setAttribute('data-noel-colors', settings.noel_colors ? 'true' : 'false');
     root.setAttribute('data-noel-primary', settings.noel_primary_color ? 'true' : 'false');
     root.setAttribute('data-noel-secondary', settings.noel_secondary_color ? 'true' : 'false');

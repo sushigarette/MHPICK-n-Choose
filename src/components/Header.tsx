@@ -16,6 +16,7 @@ import { useAuth } from "../context/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
 import { NoelToggle } from "./NoelToggle";
 import WeatherWidget from "./WeatherWidget";
+import { useNoelSettings } from "@/context/NoelSettingsContext";
 import supabase from "@/supabase";
 import { Settings, LogOut, LayoutDashboard, User, Calendar, BarChart2, MessageSquare, AlertTriangle } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -24,8 +25,35 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, logout, displayName, avatarUrl, currentUser, isAdmin } = useAuth();
+  const { settings: noelSettings } = useNoelSettings();
   const [userEmail, setUserEmail] = useState("");
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+  const [noelDisabledForSession, setNoelDisabledForSession] = useState(() => {
+    return sessionStorage.getItem('noel_disabled_session') === 'true';
+  });
+  
+  const isNoelActive = noelSettings.noel_theme_enabled && !noelDisabledForSession;
+
+  // Écouter les changements de sessionStorage pour mettre à jour l'état
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setNoelDisabledForSession(sessionStorage.getItem('noel_disabled_session') === 'true');
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // Écouter aussi les changements dans la même fenêtre
+    const interval = setInterval(() => {
+      const currentValue = sessionStorage.getItem('noel_disabled_session') === 'true';
+      if (currentValue !== noelDisabledForSession) {
+        setNoelDisabledForSession(currentValue);
+      }
+    }, 100);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [noelDisabledForSession]);
 
   useEffect(() => {
     const fetchOnlineUsers = async () => {
@@ -64,16 +92,19 @@ const Header: React.FC = () => {
               className="flex items-center space-x-2"
             >
               <img 
-                className="h-12 cursor-pointer dark:invert object-contain" 
-                style={{ 
-                  transform: 'scale(3)',
-                  transformOrigin: 'left center',
-                  maxHeight: '64px',
-                  width: 'auto'
-                }}
-                src={"/logonoel.png"}
+                className={`cursor-pointer dark:invert ${isNoelActive ? 'h-32' : 'h-12'}`}
+                src={isNoelActive ? "/logonoel.png" : "/logomhp.png"}
                 onClick={() => window.open('https://www.google.com/maps/search/?api=1&query=2+Imp.+Boudeville,+31100+Toulouse', '_blank')}
+                style={{ transform: 'none' }}
               />
+              {!isNoelActive && (
+                <span 
+                  className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 text-transparent bg-clip-text cursor-pointer"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  MHPick
+                </span>
+              )}
             </motion.div>
           </div>
 
@@ -120,7 +151,7 @@ const Header: React.FC = () => {
                 </div>
               </div>
             )}
-            <ThemeToggle />
+            {!isNoelActive && <ThemeToggle />}
             <NoelToggle />
             {isAuthenticated ? (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
