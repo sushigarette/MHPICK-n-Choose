@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Police de Noël */
+@font-face {
+  font-family: 'FontNoel';
+  src: url('/fontnoel.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
