@@ -187,8 +187,8 @@
   /* Rendre les cartes légèrement visibles pour voir le fond de Noël */
   [data-noel-theme="true"][data-noel-background="true"] .bg-card,
   [data-noel-theme="true"][data-noel-background="true"] [class*="bg-card"] {
-    background-color: rgba(255, 255, 255, 0.3) !important;
-    backdrop-filter: blur(1px);
+    background-color: rgba(255, 255, 255, 0.05) !important; /* Opacité ajustée à 0.05 */
+    backdrop-filter: blur(4px);
   }
 
   /* Exclure les modales/dialogs de la transparence */
@@ -218,8 +218,8 @@
   /* Mode sombre - cartes légèrement visibles */
   [data-noel-theme="true"][data-noel-background="true"].dark .bg-card,
   [data-noel-theme="true"][data-noel-background="true"].dark [class*="bg-card"] {
-    background-color: rgba(0, 0, 0, 0.3) !important;
-    backdrop-filter: blur(1px);
+    background-color: rgba(30, 30, 30, 0.05) !important;
+    backdrop-filter: blur(4px);
   }
 
   /* Mode sombre - modales opaques */
@@ -239,7 +239,8 @@
   /* Rendre les backgrounds transparents */
   [data-noel-theme="true"][data-noel-background="true"] .bg-background,
   [data-noel-theme="true"][data-noel-background="true"] [class*="bg-background"] {
-    background-color: transparent !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(4px);
   }
 
   /* Forcer la police en noir pour tout le site */
@@ -259,15 +260,15 @@
   /* Rendre le header légèrement visible */
   [data-noel-theme="true"][data-noel-background="true"] header,
   [data-noel-theme="true"][data-noel-background="true"] header.bg-background {
-    background-color: rgba(255, 255, 255, 0.3) !important;
-    backdrop-filter: blur(1px);
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(4px);
   }
 
   /* Mode sombre - header légèrement visible */
   [data-noel-theme="true"][data-noel-background="true"].dark header,
   [data-noel-theme="true"][data-noel-background="true"].dark header.bg-background {
-    background-color: rgba(0, 0, 0, 0.3) !important;
-    backdrop-filter: blur(1px);
+    background-color: rgba(30, 30, 30, 0.05) !important;
+    backdrop-filter: blur(4px);
   }
 
   /* Appliquer bg-muted aux boutons (sauf les boutons destructifs) */
