@@ -88,6 +88,64 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  .noel {
+    /* Thème de Noël - Rouge, Vert, Blanc, Doré */
+    /* Les couleurs sont appliquées conditionnellement via les attributs data-* */
+  }
+
+  /* Application conditionnelle des couleurs de Noël */
+  [data-noel-theme="true"][data-noel-colors="true"] {
+    --background: 0 0% 98%;
+    --foreground: 142 76% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 142 76% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 142 76% 20%;
+
+    --muted: 45 100% 90%;
+    --muted-foreground: 142 76% 20%;
+
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --sidebar-background: 142 70% 25%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+
+  /* Couleur primaire (rouge) conditionnelle */
+  [data-noel-theme="true"][data-noel-colors="true"][data-noel-primary="true"] {
+    --primary: 0 84% 50%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 0 84% 50%;
+    --sidebar-primary: 0 84% 50%;
+  }
+
+  /* Couleur secondaire (vert) conditionnelle */
+  [data-noel-theme="true"][data-noel-colors="true"][data-noel-secondary="true"] {
+    --secondary: 142 70% 35%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 142 70% 45%;
+    --accent-foreground: 0 0% 100%;
+    --sidebar-accent: 142 70% 35%;
+  }
+
+  /* Bordures conditionnelles */
+  [data-noel-theme="true"][data-noel-borders="true"] {
+    --border: 142 50% 80%;
+    --input: 142 50% 85%;
+    --sidebar-border: 142 60% 50%;
+    --sidebar-ring: 45 100% 60%;
+  }
+
+  /* Fond conditionnel */
+  [data-noel-theme="true"][data-noel-background="true"] {
+    /* Fond de Noël avec motifs festifs */
+  }
 }
 
 @layer base {
@@ -106,6 +164,115 @@
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fond de Noël avec image */
+  [data-noel-theme="true"][data-noel-background="true"] body {
+    background-image: url('/fondnoel.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+
+  /* Rendre les cartes légèrement visibles pour voir le fond de Noël */
+  [data-noel-theme="true"][data-noel-background="true"] .bg-card,
+  [data-noel-theme="true"][data-noel-background="true"] [class*="bg-card"] {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(1px);
+  }
+
+  /* Exclure les modales/dialogs de la transparence */
+  [data-noel-theme="true"][data-noel-background="true"] [role="dialog"],
+  [data-noel-theme="true"][data-noel-background="true"] [role="dialog"].bg-background,
+  [data-noel-theme="true"][data-noel-background="true"] [role="dialog"] .bg-background {
+    background-color: hsl(var(--background)) !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Exclure les notifications (toasts) de la transparence */
+  [data-noel-theme="true"][data-noel-background="true"] [data-radix-toast-announce-exclude],
+  [data-noel-theme="true"][data-noel-background="true"] [data-radix-collection-item][data-state],
+  [data-noel-theme="true"][data-noel-background="true"] ol[tabindex="-1"] li,
+  [data-noel-theme="true"][data-noel-background="true"] [data-swipe-direction] {
+    background-color: hsl(var(--background)) !important;
+    backdrop-filter: none !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Assurer la visibilité du texte dans les notifications - en noir */
+  [data-noel-theme="true"][data-noel-background="true"] ol[tabindex="-1"] li *,
+  [data-noel-theme="true"][data-noel-background="true"] [data-radix-collection-item][data-state] * {
+    color: #000000 !important;
+  }
+
+  /* Mode sombre - cartes légèrement visibles */
+  [data-noel-theme="true"][data-noel-background="true"].dark .bg-card,
+  [data-noel-theme="true"][data-noel-background="true"].dark [class*="bg-card"] {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(1px);
+  }
+
+  /* Mode sombre - modales opaques */
+  [data-noel-theme="true"][data-noel-background="true"].dark [role="dialog"],
+  [data-noel-theme="true"][data-noel-background="true"].dark [role="dialog"].bg-background {
+    background-color: hsl(var(--background)) !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Rendre les popovers et modals semi-transparents */
+  [data-noel-theme="true"][data-noel-background="true"] .bg-popover,
+  [data-noel-theme="true"][data-noel-background="true"] [class*="bg-popover"] {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(2px);
+  }
+
+  /* Rendre les backgrounds transparents */
+  [data-noel-theme="true"][data-noel-background="true"] .bg-background,
+  [data-noel-theme="true"][data-noel-background="true"] [class*="bg-background"] {
+    background-color: transparent !important;
+  }
+
+  /* Forcer la police en noir pour tout le site */
+  [data-noel-theme="true"][data-noel-background="true"] * {
+    color: #000000 !important;
+  }
+
+  /* Exceptions pour certains éléments qui doivent garder leur couleur */
+  [data-noel-theme="true"][data-noel-background="true"] .text-primary,
+  [data-noel-theme="true"][data-noel-background="true"] .text-destructive,
+  [data-noel-theme="true"][data-noel-background="true"] .text-muted-foreground,
+  [data-noel-theme="true"][data-noel-background="true"] [class*="text-primary"],
+  [data-noel-theme="true"][data-noel-background="true"] [class*="text-destructive"] {
+    color: inherit !important;
+  }
+
+  /* Rendre le header légèrement visible */
+  [data-noel-theme="true"][data-noel-background="true"] header,
+  [data-noel-theme="true"][data-noel-background="true"] header.bg-background {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(1px);
+  }
+
+  /* Mode sombre - header légèrement visible */
+  [data-noel-theme="true"][data-noel-background="true"].dark header,
+  [data-noel-theme="true"][data-noel-background="true"].dark header.bg-background {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(1px);
+  }
+
+  /* Appliquer bg-muted aux boutons (sauf les boutons destructifs) */
+  [data-noel-theme="true"][data-noel-background="true"] button:not(.bg-destructive):not([class*="bg-destructive"]),
+  [data-noel-theme="true"][data-noel-background="true"] button.bg-background,
+  [data-noel-theme="true"][data-noel-background="true"] button.bg-primary {
+    background-color: hsl(var(--muted)) !important;
+    color: #000000 !important;
+  }
+
+  /* Hover pour les boutons avec bg-muted */
+  [data-noel-theme="true"][data-noel-background="true"] button:not(.bg-destructive):not([class*="bg-destructive"]):hover,
+  [data-noel-theme="true"][data-noel-background="true"] button.bg-primary:hover {
+    background-color: hsl(var(--muted) / 0.8) !important;
   }
 }
 

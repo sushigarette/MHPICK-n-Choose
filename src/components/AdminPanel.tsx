@@ -15,9 +15,10 @@ import {
 import { Switch } from "./ui/switch";
 import Header from "./Header";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Pencil } from "lucide-react";
+import { Calendar as CalendarIcon, Pencil, Sparkles } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
+import { useNoelSettings } from "@/context/NoelSettingsContext";
 
 interface User {
   id: string;
@@ -43,7 +44,8 @@ const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<'users' | 'resources'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'resources' | 'noel'>('users');
+  const { settings: noelSettings, updateSetting: updateNoelSetting } = useNoelSettings();
   const [resourceTypeFilter, setResourceTypeFilter] = useState<string>("all");
   const [resourceSearch, setResourceSearch] = useState("");
   const [resourceStatusFilter, setResourceStatusFilter] = useState<string>("all");
@@ -183,6 +185,14 @@ const AdminPanel: React.FC = () => {
               onClick={() => setActiveTab('resources')}
             >
               Gestion des ressources
+            </Button>
+            <Button 
+              variant={activeTab === 'noel' ? 'default' : 'outline'} 
+              onClick={() => setActiveTab('noel')}
+              className="flex items-center gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              Thème de Noël
             </Button>
           </div>
 
@@ -389,6 +399,142 @@ const AdminPanel: React.FC = () => {
                     ))}
                 </TableBody>
               </Table>
+            </>
+          )}
+
+          {activeTab === 'noel' && (
+            <>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <Sparkles className="h-6 w-6" />
+                Configuration du thème de Noël
+              </h2>
+              <div className="space-y-6">
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Configurez les éléments du thème de Noël. Le thème est activé par défaut pour tous les utilisateurs.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+                      <div className="flex-1">
+                        <h3 className="font-semibold mb-1">Thème de Noël global</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Active/désactive le thème de Noël pour tout le site
+                        </p>
+                      </div>
+                      <Switch
+                        checked={noelSettings.noel_theme_enabled}
+                        onCheckedChange={(checked) => {
+                          updateNoelSetting('noel_theme_enabled', checked);
+                          toast({ title: `Thème de Noël ${checked ? 'activé' : 'désactivé'}` });
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+                      <div className="flex-1">
+                        <h3 className="font-semibold mb-1">Couleurs de Noël</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Active/désactive toutes les couleurs de Noël (rouge, vert, blanc, doré)
+                        </p>
+                      </div>
+                      <Switch
+                        checked={noelSettings.noel_colors}
+                        onCheckedChange={(checked) => {
+                          updateNoelSetting('noel_colors', checked);
+                          toast({ title: `Couleurs de Noël ${checked ? 'activées' : 'désactivées'}` });
+                        }}
+                        disabled={!noelSettings.noel_theme_enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+                      <div className="flex-1">
+                        <h3 className="font-semibold mb-1">Couleur primaire (Rouge)</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Active/désactive la couleur rouge pour les boutons principaux
+                        </p>
+                      </div>
+                      <Switch
+                        checked={noelSettings.noel_primary_color}
+                        onCheckedChange={(checked) => {
+                          updateNoelSetting('noel_primary_color', checked);
+                          toast({ title: `Couleur primaire ${checked ? 'activée' : 'désactivée'}` });
+                        }}
+                        disabled={!noelSettings.noel_theme_enabled || !noelSettings.noel_colors}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+                      <div className="flex-1">
+                        <h3 className="font-semibold mb-1">Couleur secondaire (Vert)</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Active/désactive la couleur verte pour les éléments secondaires
+                        </p>
+                      </div>
+                      <Switch
+                        checked={noelSettings.noel_secondary_color}
+                        onCheckedChange={(checked) => {
+                          updateNoelSetting('noel_secondary_color', checked);
+                          toast({ title: `Couleur secondaire ${checked ? 'activée' : 'désactivée'}` });
+                        }}
+                        disabled={!noelSettings.noel_theme_enabled || !noelSettings.noel_colors}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+                      <div className="flex-1">
+                        <h3 className="font-semibold mb-1">Fond de Noël</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Active/désactive le fond de Noël
+                        </p>
+                      </div>
+                      <Switch
+                        checked={noelSettings.noel_background}
+                        onCheckedChange={(checked) => {
+                          updateNoelSetting('noel_background', checked);
+                          toast({ title: `Fond de Noël ${checked ? 'activé' : 'désactivé'}` });
+                        }}
+                        disabled={!noelSettings.noel_theme_enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+                      <div className="flex-1">
+                        <h3 className="font-semibold mb-1">Bordures de Noël</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Active/désactive les bordures de Noël
+                        </p>
+                      </div>
+                      <Switch
+                        checked={noelSettings.noel_borders}
+                        onCheckedChange={(checked) => {
+                          updateNoelSetting('noel_borders', checked);
+                          toast({ title: `Bordures de Noël ${checked ? 'activées' : 'désactivées'}` });
+                        }}
+                        disabled={!noelSettings.noel_theme_enabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+                      <div className="flex-1">
+                        <h3 className="font-semibold mb-1">Neige animée</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Active/désactive l'animation de neige qui tombe sur l'écran
+                        </p>
+                      </div>
+                      <Switch
+                        checked={noelSettings.noel_snow}
+                        onCheckedChange={(checked) => {
+                          updateNoelSetting('noel_snow', checked);
+                          toast({ title: `Neige ${checked ? 'activée' : 'désactivée'}` });
+                        }}
+                        disabled={!noelSettings.noel_theme_enabled}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </>
           )}
         </div>
