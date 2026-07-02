@@ -6,6 +6,7 @@ import { Resource, Reservation } from "@/interfaces";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useAuth } from "@/context/AuthContext";
+import { isResourceBlocked } from "@/lib/resources";
 
 interface ReservationModalProps {
   isOpen: boolean;
@@ -52,7 +53,7 @@ const ReservationModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        {!resource.is_active ? (
+        {isResourceBlocked(resource) ? (
           <div className="flex flex-col gap-4 py-4">
             <div className="bg-destructive/10 p-4 rounded-lg">
               <p className="text-destructive font-medium mb-2">Ressource désactivée</p>

@@ -62,10 +62,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const fetchProfile = async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url, is_admin")
+        .select("display_name, avatar_url, is_admin, is_active")
         .eq("id", currentUser?.id)
         .single();
       if (data) {
+        // Éjecter immédiatement un compte désactivé, même sur restauration de session
+        if (data.is_active === false) {
+          await supabase.auth.signOut();
+          setCurrentUser(null);
+          setIsAuthenticated(false);
+          setIsAdmin(false);
+          setIsLoading(false);
+          return;
+        }
         setDisplayName(data.display_name);
         setAvatarUrl(data.avatar_url);
         setIsAdmin(data.is_admin || false);

@@ -67,7 +67,28 @@ const AdminPanel: React.FC = () => {
 
   const fetchResources = async () => {
     const { data, error } = await supabase.from("resources").select("id, name, type, is_active, block_reason, block_until");
-    if (!error) setResources(data || []);
+    if (error) return;
+    const list = data || [];
+
+    // Réactiver automatiquement les ressources dont la date de blocage est dépassée.
+    const expiredIds = list
+      .filter((r) => r.is_active === false && r.block_until && new Date(r.block_until).getTime() <= Date.now())
+      .map((r) => r.id);
+
+    if (expiredIds.length) {
+      await supabase
+        .from("resources")
+        .update({ is_active: true, block_reason: null, block_until: null })
+        .in("id", expiredIds);
+    }
+
+    setResources(
+      list.map((r) =>
+        expiredIds.includes(r.id)
+          ? { ...r, is_active: true, block_reason: undefined, block_until: undefined }
+          : r
+      )
+    );
   };
 
   const toggleAdminStatus = async (userId: string, isAdmin: boolean) => {

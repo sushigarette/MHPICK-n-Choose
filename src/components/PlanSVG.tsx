@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Resource } from "@/interfaces";
+import { Reservation, Resource } from "@/interfaces";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { isResourceActive, isResourceBlocked } from "@/lib/resources";
 
 interface PlanSVGProps {
   resources: Resource[];
@@ -31,7 +32,7 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
     resource.type === "desk" || resource.type === "room"
   );
 
-  const getClassName = (reservations: any[], type: string, isActive: boolean) => {
+  const getClassName = (reservations: Reservation[] | undefined, type: string, isActive: boolean) => {
     if (!isActive) {
       return "fill-destructive/40 cursor-pointer"; // Désactivé mais cliquable
     }
@@ -127,6 +128,12 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
         onMouseLeave={handleMouseUp}
         onClick={handleSvgClick}
       >
+        <defs>
+          {/* Clip circulaire relatif à la boîte de l'image (indépendant de la position) */}
+          <clipPath id="avatar-circle" clipPathUnits="objectBoundingBox">
+            <circle cx="0.5" cy="0.5" r="0.5" />
+          </clipPath>
+        </defs>
         {filteredResources.map((resource) => {
           const isReserved = resource.reservations?.length > 0;
           const isDragging = draggedResource?.id === resource.id;
@@ -146,7 +153,8 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
                       y={resource.cy - 32}
                       width="64"
                       height="64"
-                      clipPath="circle(32px at 32px 32px)"
+                      preserveAspectRatio="xMidYMid slice"
+                      clipPath="url(#avatar-circle)"
                       onClick={() => onSelect(resource)}
                     />
                   ) : (
@@ -156,7 +164,7 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
                       cy={resource.cy}
                       rx="12"
                       ry="12"
-                      className={`${getClassName(resource.reservations, resource.type, resource.is_active ?? true)}`}
+                      className={`${getClassName(resource.reservations, resource.type, isResourceActive(resource))}`}
                       whileHover={{ scale: 1.2 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => onSelect(resource)}
@@ -204,7 +212,7 @@ const PlanSVG: React.FC<PlanSVGProps> = ({
 
                 </g>
               </TooltipTrigger>
-              {!resource.is_active ? (
+              {isResourceBlocked(resource) ? (
                 <TooltipContent>
                   <div className="flex flex-col gap-1">
                     <p className="font-medium text-destructive">Ressource désactivée</p>

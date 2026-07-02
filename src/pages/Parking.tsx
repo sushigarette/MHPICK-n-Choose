@@ -8,6 +8,7 @@ import { fr } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isResourceBlocked } from "@/lib/resources";
 import { Separator } from "@/components/ui/separator";
 import supabase from "@/supabase";
 import { useAuth } from "@/context/AuthContext";
@@ -262,7 +263,7 @@ const Parking: React.FC = () => {
                 <div
                   key={spot.id}
                   className={`p-6 rounded-lg text-center h-[220px] w-[220px] flex flex-col justify-between items-center ${
-                    !spot.is_active
+                    isResourceBlocked(spot)
                       ? "bg-destructive/10 text-destructive"
                       : isReserved
                         ? "bg-destructive/10 text-destructive"

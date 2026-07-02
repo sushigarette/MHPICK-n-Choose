@@ -3,13 +3,10 @@ import Header from "../components/Header";
 import ReservationModal from "../components/ReservationModal";
 import TicketModal from "../components/TicketModal";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar } from "@/components/ui/calendar";
-import { format, startOfDay, isBefore, isToday, isAfter } from "date-fns";
+import { format, startOfDay, isBefore, isToday } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, ArrowLeft, ArrowRight, Clock, AlertTriangle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { AlertTriangle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +17,10 @@ import PlanSVG from "@/components/PlanSVG";
 import { Reservation, Resource } from "@/interfaces";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import SnakeGame from "../components/SnakeGame";
+import { getResourceType, getTypeLabel, getReservationName } from "@/lib/resources";
+import { isReservationActive, slotsOverlap } from "@/lib/reservations";
+import DateNavigator from "@/components/dashboard/DateNavigator";
+import ParkingGrid from "@/components/dashboard/ParkingGrid";
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
@@ -47,6 +48,14 @@ const Dashboard: React.FC = () => {
     baby: { total: 0, available: 0 }
   });
   const [showSnakeGame, setShowSnakeGame] = useState(false);
+  // Incrémenté chaque minute pour libérer automatiquement les créneaux terminés,
+  // même si la page reste ouverte (ex : une résa 9h-12h se libère à 12h00).
+  const [nowTick, setNowTick] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNowTick((t) => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Vérifier si l'utilisateur est admin
   useEffect(() => {
@@ -77,12 +86,14 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (resources.length) {
       const updatedResources = resources.map((resource) => {
-        const res = reservations.filter((res) => res.resource_id === resource.id);
+        const res = reservations.filter(
+          (res) => res.resource_id === resource.id && isReservationActive(res)
+        );
         return { ...resource, reservations: res };
       });
       setResources(updatedResources);
     }
-  }, [reservations]);
+  }, [reservations, nowTick]);
 
   // Vérifier la pénurie de places
   useEffect(() => {
@@ -91,9 +102,10 @@ const Dashboard: React.FC = () => {
       const parking = resources.filter(r => r.type === 'slot');
       const baby = resources.filter(r => r.type === 'baby');
 
-      const reservedDesks = reservations.filter(r => r.type === 'desk').length;
-      const reservedParking = reservations.filter(r => r.type === 'slot').length;
-      const reservedBaby = reservations.filter(r => r.type === 'baby').length;
+      const activeReservations = reservations.filter((r) => isReservationActive(r));
+      const reservedDesks = activeReservations.filter(r => r.type === 'desk').length;
+      const reservedParking = activeReservations.filter(r => r.type === 'slot').length;
+      const reservedBaby = activeReservations.filter(r => r.type === 'baby').length;
 
       const details = {
         desks: { total: desks.length, available: desks.length - reservedDesks },
@@ -106,7 +118,7 @@ const Dashboard: React.FC = () => {
       const isDeskShortage = reservedDesks >= desks.length * 0.7; // 70% des bureaux réservés
       setIsShortage(isDeskShortage);
     }
-  }, [resources, reservations]);
+  }, [resources, reservations, nowTick]);
 
   // Détecter l'easter egg
   useEffect(() => {
@@ -151,10 +163,12 @@ const Dashboard: React.FC = () => {
     // Mettre à jour les réservations
     setReservations(reservations || []);
     
-    // Mettre à jour les ressources avec les réservations
+    // Mettre à jour les ressources avec les réservations (créneaux non terminés)
     if (resources.length) {
       const updatedResources = resources.map((resource) => {
-        const res = reservations.filter((res) => res.resource_id === resource.id);
+        const res = reservations.filter(
+          (res) => res.resource_id === resource.id && isReservationActive(res)
+        );
         return { ...resource, reservations: res };
       });
       setResources(updatedResources);
@@ -221,14 +235,22 @@ const Dashboard: React.FC = () => {
       }
     }
 
+    // L'heure de fin doit être après l'heure de début
+    if (endTime <= startTime) {
+      toast({
+        title: "Réservation impossible",
+        description: "L'heure de fin doit être postérieure à l'heure de début.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Déterminer le type de ressource
-      const resourceType = resourceId.startsWith("place_baby_") ? "baby" :
-                         resourceId.startsWith("place_") ? "slot" : 
-                         resourceId.startsWith("bureau_flex_") ? "desk" : 
-                         resourceId.startsWith("salle_reunion_") ? "room" : "desk";
+      const resourceType = getResourceType(resourceId);
 
-      // Vérifier si l'utilisateur a déjà une réservation pour ce type de ressource à cette date
+      // Vérifier si l'utilisateur a déjà une réservation NON TERMINÉE de ce type ce jour-là.
+      // (Une résa dont le créneau est passé ne compte plus : il peut re-réserver.)
       const { data: existingUserReservations, error: userCheckError } = await supabase
         .from("reservations")
         .select("*")
@@ -238,34 +260,39 @@ const Dashboard: React.FC = () => {
 
       if (userCheckError) throw userCheckError;
 
-      if (existingUserReservations?.length > 0) {
+      if ((existingUserReservations ?? []).some((r) => isReservationActive(r))) {
         toast({
           title: "Réservation impossible",
-          description: `Vous avez déjà une réservation de ${resourceType === "desk" ? "bureau" : resourceType === "slot" ? "parking" : resourceType === "baby" ? "place baby" : "salle"} pour cette date.`,
+          description: `Vous avez déjà une réservation de ${getTypeLabel(resourceType)} en cours pour cette date.`,
           variant: "destructive",
         });
         return;
       }
 
-      // Step 1: Check for existing reservations
-      const { data: existingReservations, error: checkError } = await supabase
+      // Vérifier qu'aucune réservation existante de cette ressource ne chevauche le créneau demandé.
+      const { data: resourceReservations, error: resourceCheckError } = await supabase
         .from("reservations")
-        .select("*")
+        .select("start_time, end_time")
         .eq("resource_id", resourceId)
         .eq("date", format(date, "yyyy-MM-dd"));
 
-      if (checkError) throw checkError;
+      if (resourceCheckError) throw resourceCheckError;
 
-      if (existingReservations?.length) {
+      const hasConflict = (resourceReservations ?? []).some((r) =>
+        slotsOverlap(startTime, endTime, r.start_time, r.end_time)
+      );
+      if (hasConflict) {
         toast({
           title: "Réservation impossible",
-          description: "Cette ressource est déjà réservée pour ces horaires.",
+          description: "Cette ressource est déjà réservée sur ce créneau.",
           variant: "destructive",
         });
         return;
       }
 
-      // Step 2: Insert the reservation
+      // La vérif ci-dessus laisse une fenêtre de course entre deux utilisateurs :
+      // la garantie réelle vient de la contrainte d'exclusion (créneaux non chevauchants)
+      // en base — voir les codes 23P01 / 23505 gérés ci-dessous.
       const { error: insertError } = await supabase.from("reservations").insert([
         {
           user_id: currentUser.id,
@@ -277,25 +304,29 @@ const Dashboard: React.FC = () => {
         },
       ]);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // 23P01 = exclusion_violation, 23505 = unique_violation :
+        // la ressource vient d'être réservée sur ce créneau par quelqu'un d'autre.
+        const code = (insertError as PostgrestError).code;
+        if (code === "23P01" || code === "23505") {
+          toast({
+            title: "Réservation impossible",
+            description: "Cette ressource vient d'être réservée sur ce créneau.",
+            variant: "destructive",
+          });
+          fetchReservations();
+          return;
+        }
+        throw insertError;
+      }
 
       fetchReservations();
       setSelectedResource(null);
 
+      const label = getReservationName({ type: resourceType, resource_id: resourceId } as Reservation);
       toast({
         title: "Réservation confirmée",
-        description: `Vous avez réservé ${
-          resourceType === "desk" ? "le bureau" : 
-          resourceType === "slot" ? "la place de parking" : 
-          resourceType === "baby" ? "la place baby" :
-          "la salle"
-        } ${resourceId.replace(
-          resourceType === "desk" ? "bureau_flex_" : 
-          resourceType === "slot" ? "place_" : 
-          resourceType === "baby" ? "place_baby_" :
-          "salle_reunion_", 
-          ""
-        )} pour le ${format(date, "dd MMMM yyyy", { locale: fr })} de ${startTime} à ${endTime}.`,
+        description: `Vous avez réservé ${label} pour le ${format(date, "dd MMMM yyyy", { locale: fr })} de ${startTime} à ${endTime}.`,
       });
     } catch (error) {
       console.error("Error during reservation:", error);
@@ -439,26 +470,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Ajout de la fonction utilitaire pour vérifier la disponibilité d'une date
-  function isDateDisponible(date: Date): boolean {
-    const today = startOfDay(new Date());
-    const maxDate = new Date(today);
-    let added = 0;
-    while (added < 7) {
-      maxDate.setDate(maxDate.getDate() + 1);
-      if (maxDate.getDay() !== 0 && maxDate.getDay() !== 6) {
-        added++;
-      }
-    }
-    // Ici tu peux ajouter d'autres règles (fériés, jours complets, etc.)
-    return (
-      !isBefore(startOfDay(date), today) &&
-      !isAfter(startOfDay(date), maxDate) &&
-      date.getDay() !== 0 &&
-      date.getDay() !== 6
-    );
-  }
-
   return (
     <div className="h-full flex flex-col grow gap-2 bg-background">
       <Header />
@@ -466,88 +477,7 @@ const Dashboard: React.FC = () => {
         <div className="flex gap-4 flex-col bg-card p-6 rounded-lg shadow-md md:max-w-md w-full">
           <h2 className="font-semibold">Visualisation pour le</h2>
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  let newDate = new Date(selectedDate);
-                  let essais = 0;
-                  do {
-                    newDate.setDate(newDate.getDate() - 1);
-                    essais++;
-                    if (essais > 31) break;
-                  } while (!isDateDisponible(newDate));
-                  setSelectedDate(newDate);
-                }}
-                disabled={(() => {
-                  let testDate = new Date(selectedDate);
-                  let essais = 0;
-                  do {
-                    testDate.setDate(testDate.getDate() - 1);
-                    essais++;
-                    if (essais > 31) return true;
-                  } while (!isDateDisponible(testDate));
-                  return false;
-                })()}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-[280px] justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "EEEE d MMMM", { locale: fr }) : <span>Choisir une date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setSelectedDate(new Date(date));
-                      }
-                    }}
-                    className="rounded-md border"
-                    disabled={(date) => !isDateDisponible(date)}
-                    locale={fr}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  let newDate = new Date(selectedDate);
-                  let essais = 0;
-                  do {
-                    newDate.setDate(newDate.getDate() + 1);
-                    essais++;
-                    if (essais > 31) break;
-                  } while (!isDateDisponible(newDate));
-                  setSelectedDate(newDate);
-                }}
-                disabled={(() => {
-                  let testDate = new Date(selectedDate);
-                  let essais = 0;
-                  do {
-                    testDate.setDate(testDate.getDate() + 1);
-                    essais++;
-                    if (essais > 31) return true;
-                  } while (!isDateDisponible(testDate));
-                  return false;
-                })()}
-              >
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
+            <DateNavigator selectedDate={selectedDate} onChange={setSelectedDate} />
           </div>
           <Separator className="mb-2" />
 
@@ -578,18 +508,7 @@ const Dashboard: React.FC = () => {
               <h2 className="font-semibold">Mes réservations</h2>
               <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-2">
                 {myReservations.map((reservation, index) => {
-                  let resourceName = "";
-                  if (reservation.type === "desk") {
-                    resourceName = `Bureau ${reservation.resource_id.replace("bureau_flex_", "")}`;
-                  } else if (reservation.type === "slot") {
-                    resourceName = `Place de parking ${reservation.resource_id.replace("place_", "")}`;
-                  } else if (reservation.type === "baby") {
-                    resourceName = `Place baby ${reservation.resource_id.replace("place_baby_", "")}`;
-                  } else if (reservation.resource_id === "PhoneBox") {
-                    resourceName = "PhoneBox";
-                  } else {
-                    resourceName = `Salle ${reservation.resource_id.replace("salle_reunion_", "")}`;
-                  }
+                  const resourceName = getReservationName(reservation);
 
                   return (
                     <div key={index} className="flex justify-between items-center p-3 bg-muted rounded-md">
@@ -774,79 +693,15 @@ const Dashboard: React.FC = () => {
                   }}
                 />
               ) : activeTab === "parking" ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full justify-items-center items-center min-h-[calc(100vh-200px)] py-8">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const spotId = `place_${i + 1}`;
-                    const spotReservation = reservations.find(r => 
-                      r.resource_id === spotId && 
-                      r.date === format(selectedDate, "yyyy-MM-dd")
-                    );
-                    const isMyReservation = spotReservation?.user_id === currentUser?.id;
-                    const resource = resources.find(r => r.id === spotId);
-                    const isActive = resource?.is_active ?? true;
-
-                    return (
-                      <div
-                        key={spotId}
-                        className={`p-6 rounded-lg text-center h-[220px] w-[220px] flex flex-col justify-between items-center ${
-                          !isActive
-                            ? "bg-destructive/10 text-destructive"
-                            : spotReservation
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-green-500/10 text-green-500"
-                        }`}
-                      >
-                        <p className="font-medium text-xl mt-4">Place {i + 1}</p>
-                        {!isActive ? (
-                          <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
-                            <p className="text-sm text-center break-words w-full">
-                              Place désactivée
-                            </p>
-                            {resource?.block_reason && (
-                              <p className="text-sm text-center break-words w-full">
-                                Raison : {resource.block_reason}
-                              </p>
-                            )}
-                            {resource?.block_until && (
-                              <p className="text-sm text-center break-words w-full">
-                                Jusqu'au : {format(new Date(resource.block_until), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
-                              </p>
-                            )}
-                          </div>
-                        ) : spotReservation ? (
-                          <div className="mb-4 flex flex-col items-center justify-center gap-2 w-full">
-                            <img
-                              src={spotReservation.profiles?.avatar_url || "/lio2.png"}
-                              alt="Profile"
-                              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                            />
-                            <p className="text-sm text-center break-words w-full">
-                              {isMyReservation ? "Réservée par vous" : `Réservée par ${spotReservation.profiles?.display_name || "un utilisateur"}`}
-                            </p>
-                            {(isMyReservation || isAdmin) && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleCancelReservation(spotReservation)}
-                              >
-                                {isAdmin && !isMyReservation ? "Annuler (Admin)" : "Annuler"}
-                              </Button>
-                            )}
-                          </div>
-                        ) : (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleReservation(spotId, selectedDate)}
-                            className="mb-4"
-                          >
-                            Réserver
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <ParkingGrid
+                  resources={resources}
+                  reservations={reservations}
+                  selectedDate={selectedDate}
+                  currentUserId={currentUser?.id}
+                  isAdmin={isAdmin}
+                  onReserve={handleReservation}
+                  onCancel={handleCancelReservation}
+                />
               ) : null}
             </div>
           </div>
