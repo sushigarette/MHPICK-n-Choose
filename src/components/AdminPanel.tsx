@@ -164,9 +164,39 @@ const AdminPanel: React.FC = () => {
     setEditingName("");
   };
 
+  // Types acceptes pour un avatar. SVG volontairement exclu : un SVG peut
+  // embarquer du script, et le bucket est servi en lecture publique.
+  const AVATAR_MIME_AUTORISES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+  const AVATAR_EXT_PAR_MIME: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+    "image/gif": "gif",
+  };
+  const AVATAR_TAILLE_MAX = 2 * 1024 * 1024; // 2 Mo
+
   const handleAvatarChange = async (user: User, file: File) => {
     // On suppose que tu as un bucket 'avatars' dans Supabase Storage
-    const fileExt = file.name.split('.').pop();
+    if (!AVATAR_MIME_AUTORISES.includes(file.type)) {
+      toast({
+        title: "Format non accepte",
+        description: "Choisissez une image PNG, JPEG, WebP ou GIF.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (file.size > AVATAR_TAILLE_MAX) {
+      toast({
+        title: "Fichier trop volumineux",
+        description: `${(file.size / 1024 / 1024).toFixed(1)} Mo pour un maximum de 2 Mo.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // L'extension est deduite du type MIME, jamais du nom fourni par le
+    // client : un nom de fichier est une donnee non fiable.
+    const fileExt = AVATAR_EXT_PAR_MIME[file.type];
     const fileName = `${user.id}_${Date.now()}.${fileExt}`;
     const { data, error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
     if (error) {
