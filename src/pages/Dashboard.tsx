@@ -3,7 +3,7 @@ import Header from "../components/Header";
 import ReservationModal from "../components/ReservationModal";
 import TicketModal from "../components/TicketModal";
 import { useToast } from "@/hooks/use-toast";
-import { format, startOfDay, isBefore, isToday } from "date-fns";
+import { format, startOfDay, isBefore, isToday, isWeekend, addDays, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
@@ -17,10 +17,44 @@ import PlanSVG from "@/components/PlanSVG";
 import { Reservation, Resource } from "@/interfaces";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import SnakeGame from "../components/SnakeGame";
-import { getResourceType, getTypeLabel, getReservationName } from "@/lib/resources";
+import { getResourceType, getTypeLabel, getReservationName, isResourceActive } from "@/lib/resources";
+import { detecterHabitude, Habitude } from "@/lib/habits";
 import { isReservationActive, slotsOverlap } from "@/lib/reservations";
 import DateNavigator from "@/components/dashboard/DateNavigator";
 import ParkingGrid from "@/components/dashboard/ParkingGrid";
+import SuggestionHabitude from "@/components/dashboard/SuggestionHabitude";
+
+/** Cle localStorage des suggestions refusees, par date (AAAA-MM-JJ). */
+const CLE_REFUS_SUGGESTION = "mhpick:suggestions-refusees";
+
+/**
+ * Profondeur d'historique consultee pour deduire l'habitude. 60 reservations
+ * couvrent environ trois mois de jours ouvres, ce qui reste representatif
+ * sans figer une habitude abandonnee depuis longtemps.
+ */
+const PROFONDEUR_HISTORIQUE = 60;
+
+/**
+ * Creneau que propose la suggestion. Nomme ici plutot que repete, afin que la
+ * condition d'affichage et la reservation effective ne puissent pas diverger :
+ * ces valeurs doivent rester celles par defaut de handleReservation.
+ */
+const CRENEAU_SUGGESTION_DEBUT = "09:00";
+const CRENEAU_SUGGESTION_FIN = "17:00";
+
+/** Nombre de jours ouvres examines, aujourd'hui inclus : une semaine de travail. */
+const NB_JOURS_PROPOSES = 5;
+
+/**
+ * Le creneau propose est-il deja ecoule pour ce jour ? Evite de proposer un
+ * 9h-17h a 18h. Fonction pure pour rester testable hors composant.
+ */
+const creneauEcoule = (jour: Date, maintenant: Date = new Date()): boolean => {
+  const fin = startOfDay(jour);
+  const [heure, minute] = CRENEAU_SUGGESTION_FIN.split(":").map(Number);
+  fin.setHours(heure, minute, 0, 0);
+  return fin.getTime() <= maintenant.getTime();
+};
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
@@ -33,7 +67,7 @@ const Dashboard: React.FC = () => {
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [resourceForTicket, setResourceForTicket] = useState<Resource | null>(null);
 
-  const { currentUser } = useAuth();
+  const { currentUser, displayName } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [addMode, setAddMode] = useState(false);
@@ -51,6 +85,24 @@ const Dashboard: React.FC = () => {
   // Incrémenté chaque minute pour libérer automatiquement les créneaux terminés,
   // même si la page reste ouverte (ex : une résa 9h-12h se libère à 12h00).
   const [nowTick, setNowTick] = useState(0);
+
+  // Suggestion basee sur les habitudes de reservation.
+  const [habitude, setHabitude] = useState<Habitude | null>(null);
+  const [joursProposes, setJoursProposes] = useState<Date[]>([]);
+  /** Jour en cours de reservation, pour desactiver le bouton concerne. */
+  const [jourEnCours, setJourEnCours] = useState<string | null>(null);
+  /**
+   * Jour ou l'utilisateur a ecarte la carte. Un seul refus par journee : la
+   * carte propose plusieurs dates, la masquer date par date n'aurait pas de
+   * sens. Propre au navigateur, et sa perte est sans consequence.
+   */
+  const [suggestionRefuseeLe, setSuggestionRefuseeLe] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(CLE_REFUS_SUGGESTION);
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     const interval = setInterval(() => setNowTick((t) => t + 1), 60000);
@@ -189,6 +241,104 @@ const Dashboard: React.FC = () => {
     // Mettre à jour mes réservations
     setMyReservations(allUserReservations || []);
   };
+
+  // Historique des bureaux deja reserves, pour en deduire l'habitude.
+  useEffect(() => {
+    if (!currentUser) return;
+    let annule = false;
+
+    const chargerHabitude = async () => {
+      const { data, error } = await supabase
+        .from("reservations")
+        .select("resource_id")
+        .eq("user_id", currentUser.id)
+        .eq("type", "desk")
+        .lt("date", format(new Date(), "yyyy-MM-dd"))
+        .order("date", { ascending: false })
+        .limit(PROFONDEUR_HISTORIQUE);
+
+      if (error) {
+        console.error("Erreur lors du chargement de l'historique:", error);
+        return;
+      }
+      if (!annule) setHabitude(detecterHabitude(data ?? []));
+    };
+
+    chargerHabitude();
+    return () => {
+      annule = true;
+    };
+  }, [currentUser]);
+
+  const refuserSuggestion = () => {
+    const aujourdhui = format(new Date(), "yyyy-MM-dd");
+    setSuggestionRefuseeLe(aujourdhui);
+    try {
+      localStorage.setItem(CLE_REFUS_SUGGESTION, aujourdhui);
+    } catch {
+      // Stockage indisponible (navigation privee, site data bloque) :
+      // le refus ne tient alors que le temps de la session.
+    }
+  };
+
+  // Jours ouvres a venir ou le bureau habituel est libre.
+  useEffect(() => {
+    if (!habitude || !currentUser) {
+      setJoursProposes([]);
+      return;
+    }
+    let annule = false;
+
+    const calculerJoursLibres = async () => {
+      // Prochains jours ouvres, aujourd'hui inclus, dont le creneau propose
+      // n'est pas deja passe.
+      const candidats: Date[] = [];
+      let curseur = startOfDay(new Date());
+      while (candidats.length < NB_JOURS_PROPOSES) {
+        if (!isWeekend(curseur)) candidats.push(curseur);
+        curseur = addDays(curseur, 1);
+      }
+      const utilisables = candidats.filter((jour) => !creneauEcoule(jour));
+      if (utilisables.length === 0) {
+        if (!annule) setJoursProposes([]);
+        return;
+      }
+
+      // Une seule requete couvrant toute la plage : quelques dizaines de
+      // lignes, filtrees ensuite cote client.
+      const { data, error } = await supabase
+        .from("reservations")
+        .select("date, resource_id, user_id, type, end_time")
+        .gte("date", format(utilisables[0], "yyyy-MM-dd"))
+        .lte("date", format(utilisables[utilisables.length - 1], "yyyy-MM-dd"));
+
+      if (error) {
+        console.error("Erreur lors du calcul des jours libres:", error);
+        return;
+      }
+
+      const libres = utilisables.filter((jour) => {
+        const cle = format(jour, "yyyy-MM-dd");
+        const duJour = (data ?? []).filter((r) => r.date === cle);
+        const bureauDejaPris = duJour.some(
+          (r) => r.resource_id === habitude.resourceId && isReservationActive(r)
+        );
+        const utilisateurDejaPlace = duJour.some(
+          (r) => r.user_id === currentUser.id && r.type === "desk" && isReservationActive(r)
+        );
+        return !bureauDejaPris && !utilisateurDejaPlace;
+      });
+
+      if (!annule) setJoursProposes(libres);
+    };
+
+    calculerJoursLibres();
+    return () => {
+      annule = true;
+    };
+    // reservations est inclus pour recalculer apres une reservation ou une
+    // annulation faite ailleurs dans la page.
+  }, [habitude, currentUser, reservations, nowTick]);
 
   const handleReservation = async (resourceId: string, date: Date, startTime: string = "09:00", endTime: string = "17:00") => {
     if (!currentUser) {
@@ -470,6 +620,36 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const accepterSuggestion = async (jour: Date) => {
+    if (!habitude) return;
+    setJourEnCours(format(jour, "yyyy-MM-dd"));
+    try {
+      // On reutilise le chemin de reservation normal : il porte deja les
+      // controles de conflit, de doublon et la gestion des courses.
+      await handleReservation(
+        habitude.resourceId,
+        jour,
+        CRENEAU_SUGGESTION_DEBUT,
+        CRENEAU_SUGGESTION_FIN
+      );
+      setJoursProposes((prev) => prev.filter((d) => !isSameDay(d, jour)));
+    } finally {
+      setJourEnCours(null);
+    }
+  };
+
+  // --- Faut-il proposer le bureau habituel ? ---
+  const bureauHabituel = habitude
+    ? resources.find((r) => r.id === habitude.resourceId)
+    : undefined;
+
+  const afficherSuggestion =
+    !!habitude &&
+    !!bureauHabituel &&
+    // Un bureau desactive par un admin n'est pas proposable.
+    isResourceActive(bureauHabituel) &&
+    joursProposes.length > 0 &&
+    suggestionRefuseeLe !== format(new Date(), "yyyy-MM-dd");
   return (
     <div className="h-full flex flex-col grow gap-2 bg-background">
       <Header />
@@ -530,6 +710,21 @@ const Dashboard: React.FC = () => {
                 })}
               </div>
             </>
+          )}
+
+          {afficherSuggestion && (
+            <SuggestionHabitude
+              displayName={displayName}
+              resourceName={getReservationName({
+                type: "desk",
+                resource_id: habitude.resourceId,
+              } as Reservation)}
+              occurrences={habitude.occurrences}
+              jours={joursProposes}
+              jourEnCours={jourEnCours}
+              onAccept={accepterSuggestion}
+              onRefuse={refuserSuggestion}
+            />
           )}
 
           {isShortage && (
