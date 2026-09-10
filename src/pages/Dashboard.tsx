@@ -625,7 +625,16 @@ const Dashboard: React.FC = () => {
                   }}
                   onAddResource={async (cx, cy) => {
                     try {
-                      const newDeskNumber = resources.filter(r => r.type === 'desk').length + 1;
+                      // Numéroter depuis le plus grand suffixe existant plutôt que
+                      // depuis le nombre de bureaux : une suppression laisse un trou,
+                      // et compter les lignes réutilise alors un id déjà pris.
+                      const highestDeskNumber = resources
+                        .filter((r) => r.type === 'desk')
+                        .reduce((max, r) => {
+                          const suffix = /^bureau_flex_(\d+)$/.exec(r.id)?.[1];
+                          return suffix ? Math.max(max, Number(suffix)) : max;
+                        }, 0);
+                      const newDeskNumber = highestDeskNumber + 1;
                       const newResource = {
                         id: `bureau_flex_${newDeskNumber}`,
                         type: "desk",
