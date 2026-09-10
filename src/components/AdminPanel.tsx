@@ -34,6 +34,7 @@ interface Resource {
   type: string;
   is_active: boolean;
   block_reason?: string;
+  block_from?: string;
   block_until?: string;
 }
 
@@ -47,7 +48,7 @@ const AdminPanel: React.FC = () => {
   const [resourceTypeFilter, setResourceTypeFilter] = useState<string>("all");
   const [resourceSearch, setResourceSearch] = useState("");
   const [resourceStatusFilter, setResourceStatusFilter] = useState<string>("all");
-  const [blockEdit, setBlockEdit] = useState<{[id: string]: {reason: string, until: string}}>({});
+  const [blockEdit, setBlockEdit] = useState<{[id: string]: {reason: string, from: string, until: string}}>({});
   const [datePickerOpen, setDatePickerOpen] = useState<{[id: string]: boolean}>({});
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>("");
@@ -66,8 +67,18 @@ const AdminPanel: React.FC = () => {
   };
 
   const fetchResources = async () => {
-    const { data, error } = await supabase.from("resources").select("id, name, type, is_active, block_reason, block_until");
-    if (error) return;
+    const { data, error } = await supabase.from("resources").select("id, name, type, is_active, block_reason, block_from, block_until");
+    if (error) {
+      // Sans ce retour visible, une requete refusee vidait simplement le
+      // tableau, sans rien indiquer.
+      console.error("Erreur lors du chargement des ressources:", error);
+      toast({
+        title: "Impossible de charger les ressources",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
     const list = data || [];
 
     // Réactiver automatiquement les ressources dont la date de blocage est dépassée.
@@ -78,14 +89,14 @@ const AdminPanel: React.FC = () => {
     if (expiredIds.length) {
       await supabase
         .from("resources")
-        .update({ is_active: true, block_reason: null, block_until: null })
+        .update({ is_active: true, block_reason: null, block_from: null, block_until: null })
         .in("id", expiredIds);
     }
 
     setResources(
       list.map((r) =>
         expiredIds.includes(r.id)
-          ? { ...r, is_active: true, block_reason: undefined, block_until: undefined }
+          ? { ...r, is_active: true, block_reason: undefined, block_from: undefined, block_until: undefined }
           : r
       )
     );
@@ -114,6 +125,7 @@ const AdminPanel: React.FC = () => {
         .update({ 
           is_active: true, 
           block_reason: null, 
+          block_from: null, 
           block_until: null 
         })
         .eq("id", resourceId);
@@ -121,7 +133,7 @@ const AdminPanel: React.FC = () => {
       if (!error) {
         setResources(resources.map(r => 
           r.id === resourceId 
-            ? { ...r, is_active: true, block_reason: undefined, block_until: undefined } 
+            ? { ...r, is_active: true, block_reason: undefined, block_from: undefined, block_until: undefined } 
             : r
         ));
         toast({ title: `Ressource activée` });
@@ -131,6 +143,7 @@ const AdminPanel: React.FC = () => {
         ...prev,
         [resourceId]: { 
           reason: resources.find(r => r.id === resourceId)?.block_reason || "", 
+          from: resources.find(r => r.id === resourceId)?.block_from?.slice(0, 16) || "", 
           until: resources.find(r => r.id === resourceId)?.block_until?.slice(0, 16) || "" 
         }
       }));
@@ -138,10 +151,27 @@ const AdminPanel: React.FC = () => {
   };
 
   const saveBlockInfo = async (resourceId: string) => {
-    const { reason, until } = blockEdit[resourceId] || {};
-    const { error } = await supabase.from("resources").update({ is_active: false, block_reason: reason, block_until: until ? new Date(until).toISOString() : null }).eq("id", resourceId);
+    const { reason, from, until } = blockEdit[resourceId] || {};
+
+    // Une fenetre inversee bloquerait la ressource pour toujours sans que
+    // isResourceBlocked ne la considere jamais active : on refuse en amont.
+    if (from && until && new Date(from).getTime() >= new Date(until).getTime()) {
+      toast({
+        title: "Plage invalide",
+        description: "La date de début doit précéder la date de fin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase.from("resources").update({
+      is_active: false,
+      block_reason: reason,
+      block_from: from ? new Date(from).toISOString() : null,
+      block_until: until ? new Date(until).toISOString() : null,
+    }).eq("id", resourceId);
     if (!error) {
-      setResources(resources.map(r => r.id === resourceId ? { ...r, is_active: false, block_reason: reason, block_until: until } : r));
+      setResources(resources.map(r => r.id === resourceId ? { ...r, is_active: false, block_reason: reason, block_from: from, block_until: until } : r));
       setBlockEdit(prev => { const copy = { ...prev }; delete copy[resourceId]; return copy; });
       toast({ title: `Ressource désactivée` });
     }
@@ -209,6 +239,79 @@ const AdminPanel: React.FC = () => {
       setUsers(users.map(u => u.id === user.id ? { ...u, avatar_url: publicUrl } : u));
       toast({ title: "Photo de profil modifiée" });
     }
+  };
+
+  /** Resume lisible de la fenetre de blocage pour la colonne du tableau. */
+  const formatPlageBlocage = (resource: Resource): string => {
+    const fmt = (d: string) => format(new Date(d), "yyyy-MM-dd HH:mm");
+    const { block_from: debut, block_until: fin } = resource;
+    if (debut && fin) return `${fmt(debut)} → ${fmt(fin)}`;
+    if (fin) return `jusqu'au ${fmt(fin)}`;
+    if (debut) return `à partir du ${fmt(debut)}`;
+    return "-";
+  };
+
+  /** Selecteur d'une des deux bornes de la fenetre de blocage. */
+  const renderSelecteurDate = (
+    resourceId: string,
+    borne: "from" | "until",
+    libelle: string
+  ) => {
+    const cle = `${resourceId}:${borne}`;
+    const valeur = blockEdit[resourceId]?.[borne];
+    return (
+      <div className="flex items-center gap-1">
+        <Popover
+          open={datePickerOpen[cle]}
+          onOpenChange={open => setDatePickerOpen(prev => ({ ...prev, [cle]: open }))}
+        >
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full justify-start text-left font-normal"
+              onClick={() => setDatePickerOpen(prev => ({ ...prev, [cle]: true }))}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {valeur ? format(new Date(valeur), "yyyy-MM-dd HH:mm") : libelle}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={valeur ? new Date(valeur) : undefined}
+              onSelect={date => {
+                if (date) {
+                  const iso = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                    .toISOString()
+                    .slice(0, 16);
+                  setBlockEdit(prev => ({
+                    ...prev,
+                    [resourceId]: { ...prev[resourceId], [borne]: iso },
+                  }));
+                  setDatePickerOpen(prev => ({ ...prev, [cle]: false }));
+                }
+              }}
+              className="rounded-md border"
+            />
+          </PopoverContent>
+        </Popover>
+        {valeur && (
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label={`Effacer ${libelle.toLowerCase()}`}
+            onClick={() =>
+              setBlockEdit(prev => ({
+                ...prev,
+                [resourceId]: { ...prev[resourceId], [borne]: "" },
+              }))
+            }
+          >
+            ✕
+          </Button>
+        )}
+      </div>
+    );
   };
 
   const filteredUsers = users.filter(
@@ -367,7 +470,7 @@ const AdminPanel: React.FC = () => {
                     <TableHead>Type</TableHead>
                     <TableHead>Active</TableHead>
                     <TableHead>Raison</TableHead>
-                    <TableHead>Jusqu'au</TableHead>
+                    <TableHead>Blocage</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -384,7 +487,7 @@ const AdminPanel: React.FC = () => {
                         <TableCell>{resource.type}</TableCell>
                         <TableCell>{resource.is_active ? "Oui" : "Non"}</TableCell>
                         <TableCell>{resource.block_reason || "-"}</TableCell>
-                        <TableCell>{resource.block_until ? format(new Date(resource.block_until), "yyyy-MM-dd HH:mm") : "-"}</TableCell>
+                        <TableCell>{formatPlageBlocage(resource)}</TableCell>
                         <TableCell className="text-right">
                           {blockEdit[resource.id] ? (
                             <div className="flex flex-col gap-2">
@@ -395,39 +498,17 @@ const AdminPanel: React.FC = () => {
                                 onChange={e => setBlockEdit(prev => ({ ...prev, [resource.id]: { ...prev[resource.id], reason: e.target.value } }))}
                                 className="mb-1"
                               />
-                              <Popover open={datePickerOpen[resource.id]} onOpenChange={open => setDatePickerOpen(prev => ({ ...prev, [resource.id]: open }))}>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    className="w-full justify-start text-left font-normal"
-                                    onClick={() => setDatePickerOpen(prev => ({ ...prev, [resource.id]: true }))}
-                                  >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {blockEdit[resource.id].until ? format(new Date(blockEdit[resource.id].until), "yyyy-MM-dd HH:mm") : "Choisir une date"}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                  <Calendar
-                                    mode="single"
-                                    selected={blockEdit[resource.id].until ? new Date(blockEdit[resource.id].until) : undefined}
-                                    onSelect={date => {
-                                      if (date) {
-                                        const iso = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-                                        setBlockEdit(prev => ({ ...prev, [resource.id]: { ...prev[resource.id], until: iso } }));
-                                        setDatePickerOpen(prev => ({ ...prev, [resource.id]: false }));
-                                      }
-                                    }}
-                                    className="rounded-md border"
-                                  />
-                                </PopoverContent>
-                              </Popover>
+                              <span className="text-xs text-muted-foreground">Début du blocage</span>
+                              {renderSelecteurDate(resource.id, "from", "Immédiat")}
+                              <span className="text-xs text-muted-foreground">Fin du blocage</span>
+                              {renderSelecteurDate(resource.id, "until", "Sans fin")}
                               <div className="flex gap-2 mt-2">
                                 <Button size="sm" onClick={() => saveBlockInfo(resource.id)}>Enregistrer</Button>
                                 <Button size="sm" variant="outline" onClick={() => setBlockEdit(prev => { const copy = { ...prev }; delete copy[resource.id]; return copy; })}>Annuler</Button>
                               </div>
                             </div>
                           ) : resource.is_active ? (
-                            <Button size="sm" variant="destructive" onClick={() => setBlockEdit(prev => ({ ...prev, [resource.id]: { reason: "", until: "" } }))}>
+                            <Button size="sm" variant="destructive" onClick={() => setBlockEdit(prev => ({ ...prev, [resource.id]: { reason: "", from: "", until: "" } }))}>
                               Désactiver
                             </Button>
                           ) : (

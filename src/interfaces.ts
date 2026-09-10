@@ -24,6 +24,7 @@ export type Resource = {
   reservations?: Reservation[];
   is_active?: boolean;
   block_reason?: string;
+  block_from?: string;
   block_until?: string;
 };
 

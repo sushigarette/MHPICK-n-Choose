@@ -46,26 +46,37 @@ export const filterByType = (resources: Resource[], type: ResourceType) =>
   resources.filter((r) => r.type === type);
 
 /**
- * Une ressource est "bloquée" si elle a été désactivée (is_active === false),
- * SAUF si une date de fin de blocage (block_until) a été définie et est déjà
- * passée : dans ce cas le blocage est expiré et la ressource redevient
- * disponible automatiquement. Un blocage sans date de fin reste permanent
- * jusqu'à réactivation manuelle.
+ * Une ressource est "bloquée" si elle a été désactivée (is_active === false)
+ * ET que l'instant considéré tombe dans la fenêtre [block_from, block_until].
+ *
+ * Chaque borne est optionnelle et se comporte comme une borne ouverte :
+ *  - block_from absent  : le blocage prend effet immédiatement ;
+ *  - block_until absent : le blocage est permanent, jusqu'à réactivation
+ *    manuelle ;
+ *  - les deux absents   : comportement historique, blocage permanent.
  */
 export function isResourceBlocked(
-  resource: Pick<Resource, "is_active" | "block_until">,
+  resource: Pick<Resource, "is_active" | "block_from" | "block_until">,
   now: Date = new Date()
 ): boolean {
   if (resource.is_active !== false) return false;
-  if (resource.block_until && new Date(resource.block_until).getTime() <= now.getTime()) {
-    return false; // blocage expiré
+
+  const instant = now.getTime();
+
+  // Blocage programmé dont la fenêtre n'a pas encore commencé.
+  if (resource.block_from && new Date(resource.block_from).getTime() > instant) {
+    return false;
+  }
+  // Blocage dont la fenêtre est passée.
+  if (resource.block_until && new Date(resource.block_until).getTime() <= instant) {
+    return false;
   }
   return true;
 }
 
 /** Inverse pratique : la ressource est-elle disponible ? */
 export function isResourceActive(
-  resource: Pick<Resource, "is_active" | "block_until">,
+  resource: Pick<Resource, "is_active" | "block_from" | "block_until">,
   now: Date = new Date()
 ): boolean {
   return !isResourceBlocked(resource, now);
