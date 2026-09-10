@@ -1,0 +1,18 @@
+# En-tetes Netlify. Ce fichier remplace nginx.conf, qui n'est pas utilise ici.
+
+# index.html designe le bundle hache : il ne doit jamais etre servi depuis le
+# cache sans revalidation, sinon un deploiement n'atteint pas les navigateurs.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Le script du service worker doit etre revalide a chaque navigation, sans
+# quoi le kill-switch ci-dessous ne se propagerait pas.
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Les assets Vite portent un hachage de contenu dans leur nom : leur URL
+# change a chaque modification, ils peuvent donc etre caches indefiniment.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
